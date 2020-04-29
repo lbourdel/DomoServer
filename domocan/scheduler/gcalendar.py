@@ -46,7 +46,7 @@ def init_calendar():
                 os.path.join(path_to_credentials,'credentials.json'), SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open(os.payh.join(path_to_credentials,'token.pickle'), 'wb') as token:
+        with open(os.path.join(path_to_credentials,'token.pickle'), 'wb') as token:
             pickle.dump(creds, token)
     return creds
 
