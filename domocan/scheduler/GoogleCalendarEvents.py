@@ -159,13 +159,7 @@ data[index].time,data[index].temperature,data[index].precipProbability,data[inde
 							'dateTime':  timestamp_from_tf( tf_from_timestamp(startShutter)+3600), # startOpenShutter+1H
 #                        'timeZone': 'Europe/Paris'
 						},
-#                       'attendees': [
-#                         {
-#                           'email': 'lbourdel@yahoo.fr',
-#                           # Other attendee's data...
-#                         },
-#                         # ...
-#                       ],
+
 				}
 
 				created_event = insert_event(ressource, param_body=eventShutter)
@@ -315,17 +309,9 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 # Print the updated date.
 			print('------------EVENT UPDATED---------------')
 
-# the list_next method.
-#			request = service.events().list_next(request, response)
-
-
 	print(' Getting all events names WakePAC from this calendar ID')
 	PACStateToSet='0'
 
-#		while (request != None):
-# Get the next page
-#OLD      response = request.execute(http)
-#		response = request.execute()
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
 	events_found = get_events(ressource, timeMin, timeMax)
@@ -361,9 +347,6 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 			CloseAllShutter()
 
 			delete_event(ressource, param_eventId=event['id'])
-
-# the list_next method.
-#	request = service.events().list_next(request, response)
 
 # From web browser : http://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
 	url='http://localhost/domocan/www/php/CmdPAC.php?state='+PACStateToSet
@@ -535,7 +518,6 @@ if __name__ == '__main__':
 		scheduler = BackgroundScheduler()
 		scheduler.add_job(callable_func, 'interval', minutes=2)
 		scheduler.start()
-
 #		try:
 			# This is here to simulate application activity (which keeps the main thread alive).
 #			while True:

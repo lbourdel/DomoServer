@@ -16,23 +16,30 @@
 from __future__ import print_function
 # For forecastio
 from forecastio import load_forecast
+import platform
 import time
 
-def get_forecast():
-    forecastio_api_key = "xxx"
-    # Cesson-Sevigne
-    lat = 48.0985 
-    lng = -1.6039
-    #https://api.forecast.io/forecast/xxx/48.0985,-1.6039?lang=fr&units=si
+if platform.system()=='Linux':
+	path_to_api_key_file='/home/pi/CalendarGoogle/ForecastKey/forecastio_api_key.txt'
+else:
+	path_to_api_key_file='D:\\Domocan_Avril2020\\ApiKeys\\ForecastKey\\forecastio_api_key.txt'
 
-    forecast = load_forecast(forecastio_api_key, lat, lng, units= 'si' )
-    return forecast
+def get_forecast():
+	# Cesson-Sevigne
+	lat = 48.0985 
+	lng = -1.6039
+	#https://api.forecast.io/forecast/xxx/48.0985,-1.6039?lang=fr&units=si
+
+	with open(path_to_api_key_file) as f:
+		forecastio_api_key = f.readline().strip()
+
+	forecast = load_forecast(forecastio_api_key, lat, lng, units= 'si' )
+	return forecast
 
 if __name__ == '__main__':
-    forecast_cesson = get_forecast()
+	forecast_cesson = get_forecast()
 
-    by_hour = forecast_cesson.hourly()
+	print( forecast_cesson.currently().icon
+			+ ' : temp ' + str(forecast_cesson.currently().apparentTemperature))
 
-    by_day = forecast_cesson.daily()
 
-    print(by_day.icon)

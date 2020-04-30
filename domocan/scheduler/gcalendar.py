@@ -23,95 +23,95 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 if platform.system()=='Linux':
-    path_to_credentials='/home/pi/CalendarGoogle/'
+	path_to_api_keys='/home/pi/CalendarGoogle/'
 else:
-    path_to_credentials='D:\Domocan_Avril2020\ApiKeys'
+	path_to_api_keys='D:\\Domocan_Avril2020\\ApiKeys\\CalendarAPIKey'
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 mycalendarId = '4cstbss5a1pi3avvt2qq59a950@group.calendar.google.com'
 
 def init_calendar():
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists( os.path.join(path_to_credentials,'token.pickle')):
-        print('token.pickle exists')
-        with open( os.path.join(path_to_credentials,'token.pickle'), 'rb') as token:
-            creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                os.path.join(path_to_credentials,'credentials.json'), SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open(os.path.join(path_to_credentials,'token.pickle'), 'wb') as token:
-            pickle.dump(creds, token)
+	creds = None
+	# The file token.pickle stores the user's access and refresh tokens, and is
+	# created automatically when the authorization flow completes for the first
+	# time.
+	if os.path.exists( os.path.join(path_to_api_keys,'token.pickle')):
+		print('token.pickle exists')
+		with open( os.path.join(path_to_api_keys,'token.pickle'), 'rb') as token:
+			creds = pickle.load(token)
+	# If there are no (valid) credentials available, let the user log in.
+	if not creds or not creds.valid:
+		if creds and creds.expired and creds.refresh_token:
+			creds.refresh(Request())
+		else:
+			flow = InstalledAppFlow.from_client_secrets_file(
+				os.path.join(path_to_api_keys,'credentials.json'), SCOPES)
+			creds = flow.run_local_server(port=0)
+		# Save the credentials for the next run
+		with open(os.path.join(path_to_api_keys,'token.pickle'), 'wb') as token:
+			pickle.dump(creds, token)
 
-    service = build('calendar', 'v3', credentials=creds)
-    return service
+	service = build('calendar', 'v3', credentials=creds)
+	return service
 
 def get_events(param_service, start_date, end_date=0):
 
-    # Call the Calendar API
-    if end_date==0:
-        print('Getting the upcoming 10 events')
-        events_result = param_service.events().list(calendarId=mycalendarId,
-                                              timeMin=start_date,
-                                              maxResults=10,
-                                              singleEvents=True,
-                                              orderBy='startTime').execute()
-    else:
-        print('Getting events from',start_date,' to ', end_date)
-        events_result = param_service.events().list(calendarId=mycalendarId,
-                                              timeMin=start_date,
-                                              timeMax=end_date,
-                                              singleEvents=True,
-                                              orderBy='startTime').execute()
+	# Call the Calendar API
+	if end_date==0:
+		print('Getting the upcoming 10 events')
+		events_result = param_service.events().list(calendarId=mycalendarId,
+											  timeMin=start_date,
+											  maxResults=10,
+											  singleEvents=True,
+											  orderBy='startTime').execute()
+	else:
+		print('Getting events from',start_date,' to ', end_date)
+		events_result = param_service.events().list(calendarId=mycalendarId,
+											  timeMin=start_date,
+											  timeMax=end_date,
+											  singleEvents=True,
+											  orderBy='startTime').execute()
 
-    param_events = events_result.get('items', [])
+	param_events = events_result.get('items', [])
 
-    if not param_events:
-        print('No upcoming events found.')
-    return param_events
+	if not param_events:
+		print('No upcoming events found.')
+	return param_events
 
 def update_event(param_service, param_eventId, param_event):
 
-    updated_event = param_service.events().update(calendarId=mycalendarId, eventId=param_eventId, body=param_event).execute()
-    return updated_event
+	updated_event = param_service.events().update(calendarId=mycalendarId, eventId=param_eventId, body=param_event).execute()
+	return updated_event
 
 def insert_event(param_service, param_body):
 
-    updated_event = param_service.events().insert(calendarId=mycalendarId, body=param_body).execute()
-    return updated_event
+	updated_event = param_service.events().insert(calendarId=mycalendarId, body=param_body).execute()
+	return updated_event
 
 def delete_event(param_service, param_eventId):
 
-    updated_event = param_service.events().delete(calendarId=mycalendarId, eventId=param_eventId).execute()
-    return updated_event
+	updated_event = param_service.events().delete(calendarId=mycalendarId, eventId=param_eventId).execute()
+	return updated_event
 
 
 def main():
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
-    creds = init_calendar()
+	"""Shows basic usage of the Google Calendar API.
+	Prints the start and name of the next 10 events on the user's calendar.
+	"""
+	creds = init_calendar()
 
-    date_min = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    date_max = (datetime.datetime.utcnow()+datetime.timedelta(hours=12)).isoformat() + 'Z' # 'Z' indicates UTC time
+	date_min = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+	date_max = (datetime.datetime.utcnow()+datetime.timedelta(hours=12)).isoformat() + 'Z' # 'Z' indicates UTC time
 
-    events = get_events(creds, date_min, date_max)
+	events = get_events(creds, date_min, date_max)
 
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
+	for event in events:
+		start = event['start'].get('dateTime', event['start'].get('date'))
+		print(start, event['summary'])
 
 
 if __name__ == '__main__':
-    main()
+	main()
 # [END calendar_quickstart]
 
