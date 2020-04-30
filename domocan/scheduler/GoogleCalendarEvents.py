@@ -20,19 +20,17 @@ requirements are: google-api-python-client and pyOpenSSL
 	sudo pip install oauth2client
 	sudo apt-get install python-dev
 	sudo apt-get install libffi-dev
-	wget http://domocan35.free.fr/APICalendarKey/CalendarAPIKey.zip
-	unzip CalendarAPIKey.zip
+	wget ...
+	unzip 
 	sudo mv My\ Project-ccd7c47ffc0f.p12 privatekey.p12
 	sudo chmod 0777 privatekey.p12
 	sudo pip install google-api-python-client pyOpenSSL
 
-https://console.developers.google.com/project/apps~valiant-marker-684/apiui/credential
-service_account_name = 644548480350-gpp37sr6u2o4fupattsos6vdia5k2cqj@developer.gserviceaccount.com
-
-API KEY = AIzaSyCrNT6qZNeCU930nsGDeQi7YSWxfsIOHDw
 '''#These are the imports google said to include
+import platform
 import sys
-import syslog
+if platform.system()=='Linux':
+	import syslog
 #sys.path.append( "/home/pi/.local/lib/python3.7/site-packages" )
 
 import datetime
@@ -62,9 +60,7 @@ from gcalendar import init_calendar, get_events, update_event, insert_event, del
 wake_interval=8
 
 def FullTextQuery():
-	service_account_name = 'domo-555@calendardomocan.iam.gserviceaccount.com'
-
-	creds = init_calendar()
+	ressource = init_calendar()
 
 #We add TZ_OFFSET in timeMin/timeMax
 	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
@@ -81,7 +77,7 @@ def FullTextQuery():
 
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
-	events_found = get_events(creds, timeMin, timeMax)
+	events_found = get_events(ressource, timeMin, timeMax)
 	for event in events_found:
 		print( 'LBR'+event['summary'])
 
@@ -172,7 +168,7 @@ data[index].time,data[index].temperature,data[index].precipProbability,data[inde
 #                       ],
 				}
 
-				created_event = insert_event(creds, param_body=eventShutter)
+				created_event = insert_event(ressource, param_body=eventShutter)
 
 # cloudCover: A numerical value between 0 and 1 (inclusive) representing the percentage of sky occluded by clouds.
 # A value of 0 corresponds to clear sky, 0.4 to scattered clouds,
@@ -223,7 +219,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 			}
 
 #Pas pendant vacances
-			created_event = insert_event(creds, param_body=eventShutter)
+			created_event = insert_event(ressource, param_body=eventShutter)
 
 			timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=2) #delta +1H en hiver +2H en ete
 			timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
@@ -254,7 +250,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 				},
 			}
 
-			created_event = insert_event(creds, param_body=eventShutter)
+			created_event = insert_event(ressource, param_body=eventShutter)
 # END FROM FORECASTIO
 
 # ajustement fin chauffage
@@ -288,7 +284,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 					},
 				}
 
-				created_event = insert_event(creds, param_body=eventWakePAC)
+				created_event = insert_event(ressource, param_body=eventWakePAC)
 
 #Arret a la fin de l'heure creuse 07h30
 			today_end_off_peak_hour= datetime.now().strftime('%Y-%m-%dT')+'07:15:00'+TZ_OFFSET
@@ -311,11 +307,11 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 			event['summary']='WakePAC'
 
 			if( by_day.data[1].temperatureMax < 18 ):
-				updated_event = update_event(creds, param_eventId=event['id'], param_event=event)
+				updated_event = update_event(ressource, param_eventId=event['id'], param_event=event)
 			else:
 				event['start']['dateTime']=timestamp_from_tf(end_time_timestamp + 24*60*60 - 60*60)
 				event['summary']='NoWakePAC'
-				updated_event = update_event(creds, param_eventId=event['id'], param_event=event)
+				updated_event = update_event(ressource, param_eventId=event['id'], param_event=event)
 # Print the updated date.
 			print('------------EVENT UPDATED---------------')
 
@@ -332,7 +328,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #		response = request.execute()
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
-	events_found = get_events(creds, timeMin, timeMax)
+	events_found = get_events(ressource, timeMin, timeMax)
 	for event in events_found:
 		if( event['summary']=='WakePAC'):
 			print( "!!!MATCH!!!   Title query=%s"%event['summary'])
@@ -346,7 +342,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 			else:
 				event['description']='\nPAC Started'
 
-			updated_event = update_event( creds, param_eventId=event['id'], param_event=event)
+			updated_event = update_event( ressource, param_eventId=event['id'], param_event=event)
 
 		if( event['summary']=='OpenShutter'):
 			print( "!!!MATCH!!!   Title query=%s"%event['summary'])
@@ -355,7 +351,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 
 			OpenAllShutter()
 
-			delete_event(creds, param_eventId=event['id'])
+			delete_event(ressource, param_eventId=event['id'])
 
 		if( event['summary']=='CloseShutter'):
 			print( "!!!MATCH!!!   Title query=%s"%event['summary'])
@@ -364,7 +360,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 
 			CloseAllShutter()
 
-			delete_event(creds, param_eventId=event['id'])
+			delete_event(ressource, param_eventId=event['id'])
 
 # the list_next method.
 #	request = service.events().list_next(request, response)
@@ -520,11 +516,12 @@ def CloseAllShutter():
 	url_response.close()  # best practice to close the file
 
 def callable_func():
-    #os.system("clear") #this is more for my benefit and is in no way necesarry
-    syslog.syslog('Domocan Calendar started')
-    print ("------------start-----------")
-    FullTextQuery()
-    print( "-------------end------------")
+	#os.system("clear") #this is more for my benefit and is in no way necesarry
+	if platform.system()=='Linux':
+		syslog.syslog('Domocan Calendar started')
+	print ("------------start-----------")
+	FullTextQuery()
+	print( "-------------end------------")
 
 if __name__ == '__main__':
 	if len(sys.argv)>1:

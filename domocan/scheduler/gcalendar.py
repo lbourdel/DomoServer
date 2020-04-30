@@ -14,15 +14,18 @@
 
 # [START calendar_quickstart]
 from __future__ import print_function
+import platform
+import os.path
 import datetime
 import pickle
-import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-path_to_credentials='/home/pi/CalendarGoogle/'
-
+if platform.system()=='Linux':
+    path_to_credentials='/home/pi/CalendarGoogle/'
+else:
+    path_to_credentials='D:\Domocan_Avril2020\ApiKeys'
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
@@ -48,22 +51,23 @@ def init_calendar():
         # Save the credentials for the next run
         with open(os.path.join(path_to_credentials,'token.pickle'), 'wb') as token:
             pickle.dump(creds, token)
-    return creds
 
-def get_events(param_creds, start_date, end_date=0):
-    service = build('calendar', 'v3', credentials=param_creds)
+    service = build('calendar', 'v3', credentials=creds)
+    return service
+
+def get_events(param_service, start_date, end_date=0):
 
     # Call the Calendar API
     if end_date==0:
         print('Getting the upcoming 10 events')
-        events_result = service.events().list(calendarId=mycalendarId,
+        events_result = param_service.events().list(calendarId=mycalendarId,
                                               timeMin=start_date,
                                               maxResults=10,
                                               singleEvents=True,
                                               orderBy='startTime').execute()
     else:
         print('Getting events from',start_date,' to ', end_date)
-        events_result = service.events().list(calendarId=mycalendarId,
+        events_result = param_service.events().list(calendarId=mycalendarId,
                                               timeMin=start_date,
                                               timeMax=end_date,
                                               singleEvents=True,
@@ -75,22 +79,19 @@ def get_events(param_creds, start_date, end_date=0):
         print('No upcoming events found.')
     return param_events
 
-def update_event(param_creds, param_eventId, param_event):
-    service = build('calendar', 'v3', credentials=param_creds)
+def update_event(param_service, param_eventId, param_event):
 
-    updated_event = service.events().update(calendarId=mycalendarId, eventId=param_eventId, body=param_event).execute()
+    updated_event = param_service.events().update(calendarId=mycalendarId, eventId=param_eventId, body=param_event).execute()
     return updated_event
 
-def insert_event(param_creds, param_body):
-    service = build('calendar', 'v3', credentials=param_creds)
+def insert_event(param_service, param_body):
 
-    updated_event = service.events().insert(calendarId=mycalendarId, body=param_body).execute()
+    updated_event = param_service.events().insert(calendarId=mycalendarId, body=param_body).execute()
     return updated_event
 
-def delete_event(param_creds, param_eventId):
-    service = build('calendar', 'v3', credentials=param_creds)
+def delete_event(param_service, param_eventId):
 
-    updated_event = service.events().delete(calendarId=mycalendarId, eventId=param_eventId).execute()
+    updated_event = param_service.events().delete(calendarId=mycalendarId, eventId=param_eventId).execute()
     return updated_event
 
 
