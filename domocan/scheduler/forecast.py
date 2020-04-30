@@ -19,11 +19,11 @@ from forecastio import load_forecast
 import time
 
 def get_forecast():
-    forecastio_api_key = "465485026097be2ee6c9bf09ae9e6020"
+    forecastio_api_key = "xxx"
     # Cesson-Sevigne
     lat = 48.0985 
     lng = -1.6039
-    #https://api.forecast.io/forecast/465485026097be2ee6c9bf09ae9e6020/48.0985,-1.6039?lang=fr&units=si
+    #https://api.forecast.io/forecast/xxx/48.0985,-1.6039?lang=fr&units=si
 
     forecast = load_forecast(forecastio_api_key, lat, lng, units= 'si' )
     return forecast
