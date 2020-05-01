@@ -64,8 +64,8 @@ class envoiTrame {
       $this->trame[5] = 0x00; 
     }
 
-    if ( isset($IDCAN['PARA']) ) {
-      $this->trame[6] = $IDCAN['PARA']; // PARAMETRE (CAN)
+    if ( isset($IDCAN['PARAM']) ) {
+      $this->trame[6] = $IDCAN['PARAM']; // PARAMETRE (CAN)
     }
     else { 
       $this->trame[6] = 0x00; 

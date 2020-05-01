@@ -120,10 +120,10 @@ class in16 extends envoiTrame {
 		
   */		
   function lireStatut($cible = 0xfe, $entree = 0x01) {		
-    $IDCAN[DEST] = 0x60;		
-    $IDCAN[COMM] = 0x02;		
-    $IDCAN[CIBL] = $cible;		
-    $IDCAN[PARA] = $entree;		
+    $IDCAN['DEST'] = 0x60;		
+    $IDCAN['COMM'] = 0x02;		
+    $IDCAN['CIBL'] = $cible;		
+    $IDCAN['PARAM'] = $entree;		
     $donnees     = array();		
     $this->CAN(0x60,$IDCAN,$donnees);		
     $this->checksum();		
@@ -134,10 +134,10 @@ class in16 extends envoiTrame {
   		
   		
   function Cmd_StatF($cible = 0xfe, $entree = 0x01,  $DataForceTo0 = 0x0, $DataForceTo1 = 0x0, $DataToInversed = 0x0) {		
-    $IDCAN[DEST] = 0x60;		
-    $IDCAN[COMM] = 0x01;		
-    $IDCAN[CIBL] = $cible;		
-    $IDCAN[PARA] = $entree;		
+    $IDCAN['DEST'] = 0x60;		
+    $IDCAN['COMM'] = 0x01;		
+    $IDCAN['CIBL'] = $cible;		
+    $IDCAN['PARAM'] = $entree;		
     $donnees[0] = $DataForceTo0;		
     $donnees[1] = $DataForceTo1;		
     $donnees[2] = $DataToInversed;		
@@ -159,10 +159,10 @@ class in16 extends envoiTrame {
 		
   */		
   function normalementFerme($cible = 0xfe, $entree = 0x01) {		
-    $IDCAN[DEST] = 0x60;		
-    $IDCAN[COMM] = 0x01;		
-    $IDCAN[CIBL] = $cible;		
-    $IDCAN[PARA] = $entree;		
+    $IDCAN['DEST'] = 0x60;		
+    $IDCAN['COMM'] = 0x01;		
+    $IDCAN['CIBL'] = $cible;		
+    $IDCAN['PARAM'] = $entree;		
     $donnees[0]  = 0xfc;		
     $donnees[1]  = 0x03;		
     $donnees[2]  = 0x00;		

@@ -16,7 +16,7 @@ class gradateur extends envoiTrame {
     $IDCAN['DEST'] = 0x50;
     $IDCAN['COMM'] = 0x01;
     $IDCAN['CIBL'] = $cible;
-    $IDCAN['PARA'] = $sortie;
+    $IDCAN['PARAM'] = $sortie;
     $donnees[0] = $valeur;
     $donnees[1] = $progression;
     $this->CAN(0x60,$IDCAN,$donnees);
@@ -41,7 +41,7 @@ class gradateur extends envoiTrame {
     $IDCAN['DEST'] = 0x50;
     $IDCAN['COMM'] = 0x01;
     $IDCAN['CIBL'] = $cible;
-    $IDCAN['PARA'] = $sortie;
+    $IDCAN['PARAM'] = $sortie;
     $donnees[0] = 0x00;
     $donnees[1] = $progression;
     $this->CAN(0x60,$IDCAN,$donnees);
@@ -60,10 +60,10 @@ class gradateur extends envoiTrame {
 
   */
   function inverser($cible = 0xfe, $sortie = 0x01, $intensite = 0x32, $progression = 0x0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x04;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x04;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $donnees[0] = 0x00;
     $donnees[1] = $intensite;
     $donnees[2] = $progression;
@@ -83,10 +83,10 @@ class gradateur extends envoiTrame {
 
   */
   function inverserNuit($cible = 0xfe, $sortie = 0x01, $progression = 0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x04;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x04;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $donnees[0] = $progression;
     $tmp = `/bin/cat /tmp/lum_meza_dodo`;
     if ( $tmp == 0 ) {
@@ -112,10 +112,10 @@ class gradateur extends envoiTrame {
 
   */
   function togalnum($cible = 0xfe, $sortie = 0x01, $progression = 0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x07;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x07;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $donnees[0]  = $progression;
     $this->CAN(0x60,$IDCAN,$donnees);
     $this->checksum();
@@ -134,10 +134,10 @@ class gradateur extends envoiTrame {
 
   */
   function stopalnum($cible = 0xfe, $sortie = 0x01) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x08;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x08;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $donnees = array();
     $this->CAN(0x60,$IDCAN,$donnees);
     $this->checksum();
@@ -156,10 +156,10 @@ class gradateur extends envoiTrame {
 
   */
   function etat($cible = 0xfe, $sortie = 0x01) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x02;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x02;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $donnees = array();
     $this->CAN(0x60,$IDCAN,$donnees);
     $this->checksum();
@@ -181,10 +181,10 @@ class gradateur extends envoiTrame {
 
   */
   function varier($cible = 0xfe, $sortie = 0x01, $sens, $valeur = 0x00, $progression = 0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x03;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x03;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $sortie;
     $u = sprintf("%b", $sens) . sprintf("%b", 0) . sprintf("%06b", $valeur);
     $donnees[0] = bindec($u);
     $donnees[1] = $progression;
@@ -207,10 +207,10 @@ class gradateur extends envoiTrame {
 
   */
   function restaurerMemoire($cible = 0xfe, $memoire = 0x00, $delai = 0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x10;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $memoire;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x10;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARAM'] = $memoire;
     $donnees[0] = $delai;
     $this->CAN(0x60,$IDCAN,$donnees);
     $this->checksum();
