@@ -13,10 +13,10 @@ class gradateur extends envoiTrame {
 
   */
   function allumer($cible = 0xfe, $sortie = 0x01, $progression = 0, $valeur = 0x32) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x01;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x01;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARA'] = $sortie;
     $donnees[0] = $valeur;
     $donnees[1] = $progression;
     $this->CAN(0x60,$IDCAN,$donnees);
@@ -38,10 +38,10 @@ class gradateur extends envoiTrame {
 
   */
   function eteindre($cible = 0xfe, $sortie = 0x01, $progression = 0) {
-    $IDCAN[DEST] = 0x50;
-    $IDCAN[COMM] = 0x01;
-    $IDCAN[CIBL] = $cible;
-    $IDCAN[PARA] = $sortie;
+    $IDCAN['DEST'] = 0x50;
+    $IDCAN['COMM'] = 0x01;
+    $IDCAN['CIBL'] = $cible;
+    $IDCAN['PARA'] = $sortie;
     $donnees[0] = 0x00;
     $donnees[1] = $progression;
     $this->CAN(0x60,$IDCAN,$donnees);

@@ -1,12 +1,13 @@
 <?php
 
-//include_once('/var/www/domocan/www/conf/config.php');
+include_once('/var/www/domocan/www/conf/config.php');
 
 class envoiTrame {
 
   /* PREPARATION DU CHECKSUM */
   function checksum() {
-
+	//LBR
+    $check=0;
     for ($i = 0; $i <= 14; $i++) {
       $check = $this->trame[$i] + $check;
     }
@@ -38,33 +39,33 @@ class envoiTrame {
   function CAN($entete, $IDCAN = array(), $donnees = array()) {
 
     $this->trame[0] = $entete; // ENVOI D'UNE TRAME CAN
-    $this->trame[1] = dechex(substr($_SERVER[SERVER_ADDR],strrpos($_SERVER[SERVER_ADDR],".")+1)); // ID DU PC QUI ENVOI
+    $this->trame[1] = dechex(substr($_SERVER['SERVER_ADDR'],strrpos($_SERVER['SERVER_ADDR'],".")+1)); // ID DU PC QUI ENVOI
     $this->trame[2] = dechex(count($IDCAN) + count($donnees)); // NOMBRE D'OCTETS DE DATA
     print "trame2".$this->trame[2];
 
-    if ( isset($IDCAN[DEST]) ) {
-      $this->trame[3] = $IDCAN[DEST]; // TYPE DE CARTE (CAN)
+    if ( isset($IDCAN['DEST']) ) {
+      $this->trame[3] = $IDCAN['DEST']; // TYPE DE CARTE (CAN)
     }
     else {
       $this->trame[3] = 0x00;
     }
  
-   if ( isset($IDCAN[COMM]) ) {
-      $this->trame[4] = $IDCAN[COMM]; // COMMANDE (CAN)
+   if ( isset($IDCAN['COMM']) ) {
+      $this->trame[4] = $IDCAN['COMM']; // COMMANDE (CAN)
     }
     else { 
       $this->trame[4] = 0x00; 
     }
 
-    if ( isset($IDCAN[CIBL]) ) {
-      $this->trame[5] = $IDCAN[CIBL]; // CIBLE (CAN)
+    if ( isset($IDCAN['CIBL']) ) {
+      $this->trame[5] = $IDCAN['CIBL']; // CIBLE (CAN)
     }
     else { 
       $this->trame[5] = 0x00; 
     }
 
-    if ( isset($IDCAN[PARA]) ) {
-      $this->trame[6] = $IDCAN[PARA]; // PARAMETRE (CAN)
+    if ( isset($IDCAN['PARA']) ) {
+      $this->trame[6] = $IDCAN['PARA']; // PARAMETRE (CAN)
     }
     else { 
       $this->trame[6] = 0x00; 

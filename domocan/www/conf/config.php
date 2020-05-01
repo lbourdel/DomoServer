@@ -26,9 +26,9 @@
 
   /* SQL */
   define('MYSQL_HOST', 'localhost');
-  define('MYSQL_LOGIN', 'root');
-  define('MYSQL_PWD', 'DomoCAN'); 
-  define('MYSQL_DB', 'domotique');
+  define('MYSQL_LOGIN', 'user');
+  define('MYSQL_PWD', 'user'); 
+  define('MYSQL_DB', 'DomoBourdel');
   define('TABLE_ENTREE', 'entree');
   define('TABLE_LUMIERES', 'lumieres');
   define('TABLE_LUMIERES_CLEF', 'lumieres_clef');

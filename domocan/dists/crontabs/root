@@ -1,7 +1,0 @@
-0 23 * * * php /var/www/domocan/bin/mode_nuit.php on
-30 5 * * * php /var/www/domocan/bin/mode_nuit.php off
-0 7 * * * php /var/www/domocan/bin/mode_jour.php on
-0 20 * * * php /var/www/domocan/bin/mode_jour.php off
-*/3 * * * * php /var/www/domocan/bin/temperatures.php
-* * * * * php /var/www/domocan/bin/chauffage.php
-* * * * * php /var/www/domocan/bin/message.php

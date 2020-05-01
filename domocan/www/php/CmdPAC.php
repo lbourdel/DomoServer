@@ -12,27 +12,23 @@ include_once('/var/www/domocan/www/conf/config.php');
 
 
 try {
-  $conn = new PDO("mysql:host=localhost;dbname=DomoBourdel", 'user', 'user');
+
+  $conn = new PDO("mysql:host=localhost;dbname=".MYSQL_DB, MYSQL_LOGIN, MYSQL_PWD);
   $sql = 'SELECT * FROM Status_PAC';
 
   $result_query = $conn->query($sql);
   $row = $result_query->fetch(PDO::FETCH_ASSOC); // only first row (we have only one !!)
   print_r($row);
-  $status_PAC = $row['bool_status_PAC'];
+//  $status_PAC = $row['bool_status_PAC'];
   $counter = $row['counter'];
-  print 'Status PAC'.$status_PAC.' Counter: '.$counter;
- //        print_r($row0['0']['bool_status_PAC']);
-//    foreach($conn->query($sql) as $row) {
-//        print_r($row);
-//        print_r($row['bool_status_PAC']);
-//    }
+//  print 'Status PAC'.$status_PAC.' Counter: '.$counter;
 }catch (PDOException $e) {
     print "Erreur !: " . $e->getMessage() . "<br/>";
     die();
 }
 
   $StateToSet = $_GET["state"];
-  print 'StateToSet : '.$StateToSet;
+  //print 'StateToSet : '.$StateToSet;
 
   $CmdPAC = new gradateur();
 
