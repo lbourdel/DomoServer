@@ -3,20 +3,20 @@
 include_once('/var/www/domocan/www/conf/config.php');
 
 class envoiTrame {
-
   /* PREPARATION DU CHECKSUM */
   function checksum() {
 	//LBR
-    $check=0;
+    $check = 0;
     for ($i = 0; $i <= 14; $i++) {
       $check = $this->trame[$i] + $check;
     }
 
-    $this->trame[15] = $check % 256;  
+    $this->trame[15] = $check % 256;
   }
 
-  /* CONVERSION DE LA TRAME AVEC PACK() */
+  /* CONVERSION DE LA TRAME AVEC PACK()  */
   function conversion() {
+    if( ! isset( $this->trame_ok ) ) $this->trame_ok = 0;
     for ($i = 0; $i <= 15; $i++) {
       $this->trame_ok .= pack("c", $this->trame[$i]);
       $trame .= $this->trame[$i];
@@ -28,8 +28,7 @@ class envoiTrame {
     if (isset($this->trame_ok)) {
       $socket = socket_create(AF_INET, SOCK_DGRAM, 0);
       $longueur = strlen($this->trame_ok);
-      print 'Envoi SOCKET ' . $ADRESSE_INTERFACE;
-      socket_sendto($socket, $this->trame_ok, $longueur, 0, ADRESSE_INTERFACE, 1470);
+     socket_sendto($socket, $this->trame_ok, $longueur, 0, ADRESSE_INTERFACE, 1470);
       socket_close($socket);
 	}
 
@@ -41,7 +40,7 @@ class envoiTrame {
     $this->trame[0] = $entete; // ENVOI D'UNE TRAME CAN
     $this->trame[1] = dechex(substr($_SERVER['SERVER_ADDR'],strrpos($_SERVER['SERVER_ADDR'],".")+1)); // ID DU PC QUI ENVOI
     $this->trame[2] = dechex(count($IDCAN) + count($donnees)); // NOMBRE D'OCTETS DE DATA
-    print "trame2".$this->trame[2];
+//    print "trame2".$this->trame[2];
 
     if ( isset($IDCAN['DEST']) ) {
       $this->trame[3] = $IDCAN['DEST']; // TYPE DE CARTE (CAN)

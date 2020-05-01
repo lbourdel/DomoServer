@@ -18,8 +18,8 @@ try {
 
   $result_query = $conn->query($sql);
   $row = $result_query->fetch(PDO::FETCH_ASSOC); // only first row (we have only one !!)
-  print_r($row);
-//  $status_PAC = $row['bool_status_PAC'];
+//  print_r($row);
+  $status_PAC = $row['bool_status_PAC'];
   $counter = $row['counter'];
 //  print 'Status PAC'.$status_PAC.' Counter: '.$counter;
 }catch (PDOException $e) {
@@ -41,13 +41,11 @@ try {
   {
     if ( $StateToSet==0 ){
       $consigne=0;
-      $chaudiere=0;
       print " !!!Coupure chauffage!!!";
     }
     elseif ( $StateToSet==1 )
     {
       $consigne=0x32;
-      $chaudiere=1;
       print " !!!Allumage chauffage!!!";
     }
     $CmdPAC->allumer($carte, $sortie, hexdec($delai), $consigne );

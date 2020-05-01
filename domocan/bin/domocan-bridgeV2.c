@@ -2,6 +2,7 @@
                      With Special thanks to Stefan Krauss and the Socketcan team
 */
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -15,8 +16,6 @@
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>       // struct ip and IP_MAXPACKET (which is 65535)
@@ -37,8 +36,8 @@ unsigned short int checksum (unsigned short int *, int);
 unsigned short int udp4_checksum (struct ip, struct udphdr, unsigned char *, int);
 
 // Config variables
-const char interface[]        = "eth0"; // Interface to send packet through.
-char destination_ip[16], source_ip[16], Domocan_UDP_Int[]="eth0";
+//const char interface[16]        = "eth0"; // Interface to send packet through.
+char destination_ip[16], source_ip[16], Domocan_UDP_Int[16]="eth0";
 
 
 void Signal_Handler(sig) /* signal handler function */
@@ -72,7 +71,6 @@ void print_usage(char *prg) {
 
 
 int main(int argc, char **argv) {
-  setpriority(PRIO_PROCESS, 0, -20);
   pid_t pid;
   extern int optind, opterr, optopt;
   int opt;
@@ -89,7 +87,6 @@ int main(int argc, char **argv) {
   struct ifreq ifr;
   void *tmp;
 
-  
   int sa, sc; // UDP socket , CAN socket
   struct sockaddr_in saddr;
   struct sockaddr_can caddr;
@@ -103,21 +100,39 @@ int main(int argc, char **argv) {
   int local_port = 1470;
   int destination_port = 1470;
   // // int broadcast_address;
-  int verbose = 0;
-  int background = 1;
+  int verbose = 1;
+  int background = 0; //1;
   int canid = 0;
   const int on = 1;
   strcpy(CAN_ifr.ifr_name, "can0");
 
   char bufferHexa[40];
   int udp_bytes, raw_len, CAN_err, DCcom;
-  char calc_FCS[2], UDP_CMD[2], PCID[2], Nbytes[2], FCS[2], RX_UDP_Frame[33], Data[25];
+  char calc_FCS[2], UDP_CMD[2], PCID[2], Nbytes[2], FCS[3], RX_UDP_Frame[33], Data[25];
   char SID[5], EID[5];
   char bin_val[32], bin_str[32], DomoCANframe[32];
   char temp_msg[64], fcs[2], msg_out[40], tmp_string[40], frm_content[80], buf[10];
   char *hex_byte, hex_val[32], HexBuffer[32];
-  char cmd[255];
 
+  tmp = (char *) malloc (40 * sizeof (char));
+  if (tmp != NULL) {
+    interface = tmp;
+  } else {
+    fprintf (stderr, "ERROR: Cannot allocate memory for array 'interface'.\n");
+    exit (EXIT_FAILURE);
+  }
+  memset (interface, 0, 40 * sizeof (char));
+
+
+  char buffer[20];
+  time_t now=time(NULL);
+  struct tm  *mytime ;
+	mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
   // Check modified Process arguments  
   while ((opt = getopt(argc, argv, "l:d:b:i:e:fv?")) != -1) {
     switch (opt) {
@@ -142,8 +157,9 @@ int main(int argc, char **argv) {
                         strcpy(CAN_ifr.ifr_name, optarg);
                         break;
 
-				case 'e':
-                        strcpy(interface, optarg);
+		case 'e':
+// LBR                        strcpy(interface, optarg);
+                        strcpy(Domocan_UDP_Int, optarg);
                         break;
 
                 case 'v':
@@ -235,7 +251,7 @@ int main(int argc, char **argv) {
 //  strcpy (interface, "eth0");
   strcpy (interface, Domocan_UDP_Int);
   get_IP_conf(interface, source_ip, destination_ip);
-  if (verbose) printf("\nInt: %s, IP Source: %s, Dest: %s\n", interface, source_ip, destination_ip);
+  if (verbose) 	printf("\nInt: %s, IP Source: %s, Dest: %s\n", interface, source_ip, destination_ip);
   
 // Submit request for a socket descriptor to lookup interface.
   if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
@@ -423,7 +439,15 @@ int main(int argc, char **argv) {
           strcat(frm_content, buf);
         } // END FOR
         // printf(" (%s)\n", frm_content);
-        if (verbose) printf("\n\n>RX CAN: header=%8X data=%s dlc=%d", frame.can_id, frm_content, frame.can_dlc);		
+        if (verbose) {
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		printf("\n\n>RX CAN: header=%8X data=%s dlc=%d", frame.can_id, frm_content, frame.can_dlc);		
+		}
         // Transform to DomoCAN UDP Format
 		hex_val[0] = '\0';
         sprintf(hex_val, "%8X", frame.can_id);
@@ -472,18 +496,18 @@ int main(int argc, char **argv) {
 		DomoCANframe[30] = fcs[0];
 		DomoCANframe[31] = fcs[1];
         DomoCANframe[32] = '\0';
-		
-		// CMD 0x18 on GRAD16 ? ... PUSH and update DB
-		if ((!strcmp(SID,"5018")) || (!strcmp(SID,"6018"))) { 
-		  //sprintf(cmd, "nohup php5 /var/www/domocan/bin/recv.php %s > nohup.out 2>&1 &", DomoCANframe); // " > /dev/null 2>&1"
-		  sprintf(cmd, "php5 /var/www/domocan/bin/recv.php %s &", DomoCANframe); // " > /dev/null 2>&1"
-          system(cmd);
-		} // ENDIF
-		
 		// Serialize Message 
         msg_out[0] = '\0';
         raw_len = convert_raw(DomoCANframe, msg_out);
-        if (verbose) printf("\n=>TX UDP Frame 0x70: %s, len=%d",DomoCANframe,raw_len);
+        if (verbose){
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		 printf("\n=>TX UDP Frame 0x70: %s, len=%d",DomoCANframe,raw_len);
+		}
 		// Resets Interupts
 	    FD_ZERO(&readfds); // zero out the read set
 		FD_SET(sc, &readfds); // add CAN socket to the read set
@@ -502,27 +526,6 @@ int main(int argc, char **argv) {
           perror ("sendto() failed ");
           exit (EXIT_FAILURE);
         } // END IF sendto
-		
-		// Resets Interupts
-	    FD_ZERO(&readfds); // zero out the read set
-		FD_SET(sc, &readfds); // add CAN socket to the read set
-		FD_SET(sa, &readfds); // add UDP Serveur socket to the read set
-		
-
-
-		
-		
-		
-		//printf("php5 /var/www/domocan/bin/recv.php %s &\n", DomoCANframe);
-		
-		//char* arg_list[] = {
-		//	"php5",     /* argv[0], le nom du programme. */
-		//	"/var/www/domocan/bin/recv.php",
-		//	DomoCANframe,
-		//	NULL      /* La liste d'arguments doit se terminer par NULL.  */
-		//};
-		//execvp ("/usr/bin/php5", arg_list);
-		
   	  
      } // END IF nbytes
     } // END IF received a CAN frame
@@ -551,18 +554,34 @@ int main(int argc, char **argv) {
       strncpy(Data    , bufferHexa+14, 16); Data[16]='\0';   strcat(RX_UDP_Frame, Data); RX_UDP_Frame[30]='\0';
       strncpy(FCS     , bufferHexa+30,  2); FCS[2]='\0';
 
-      if ((verbose) && (strcmp(UDP_CMD, "70")) && (strcmp(UDP_CMD, "50"))) { printf("\n\n>RX UDP: %s", bufferHexa); }
+      if ((verbose) && (strcmp(UDP_CMD, "70")) && (strcmp(UDP_CMD, "50"))) { 
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		printf("\n\n>RX UDP: %s", bufferHexa); 
+		}
 
       // FCS OK?
       domocan_checksum(RX_UDP_Frame, calc_FCS); calc_FCS[2]='\0';
-      //printf("\nRX RAW UDP: %s(UDP_CMD)-%s(PCID)-%d(DLC)-%s/%s(Header)-%s(Data)+%s(FCS)+CalcFCS=%s\nFull Frame= %s\n", UDP_CMD, PCID , udp_bytes, SID, EID, Data, FCS, calc_FCS, RX_UDP_Frame);
+      //printf("\nRX UDP: %s(UDP_CMD)-%s(PCID)-%d(DLC)-%s/%s(Header)-%s(Data)+%s(FCS)+CalcFCS=%s\nFull Frame= %s\n", UDP_CMD, PCID , udp_bytes, SID, EID, Data, FCS, calc_FCS, RX_UDP_Frame);
 
       if (!strcmp(FCS, calc_FCS)) {
         // Frame OK (FCS)
         // printf("...fcs OK...UDP_CMD=%s...", UDP_CMD);
         if (!strcmp(UDP_CMD, "60")) {
           // RX UDP_CMD=60 [Send CAN on Bus]
-          if (verbose) printf("\nUDP_CMD=60 [Send CAN on BUS, ");
+          if (verbose) {
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		printf("\nUDP_CMD=60 [Send CAN on BUS, ");
+		}
 
           // Convert SIDH and SIDL to binary (16 bits)
 		  DomoCANframe[0]='\0'; bin_str[0]='\0';
@@ -575,7 +594,15 @@ int main(int argc, char **argv) {
 		  DomoCANframe[0]='\0';
 		  sprintf(DomoCANframe, "%s%s%s", "0x", FCS, EID);
 		  DomoCANframe[10]='\0';
-		  if (verbose) printf("Destination=%s]", SID);
+		  if (verbose) {
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 			printf("Destination=%s]", SID);
+			}
 
 		  frame.can_id     = strtoul(DomoCANframe, NULL, 0); //*msg_out;
 		  frame.can_dlc    = udp_bytes;
@@ -597,7 +624,15 @@ int main(int argc, char **argv) {
 		  } // END IF
 
           // CAN_err = sendto(s, &frame, sizeof(struct can_frame), 0, (struct sockaddr*)&caddr, sizeof(caddr));
-          if (verbose) printf("\n=>TX CAN: Header=%s, Data=%s, DLC=%d, frame len= %d", DomoCANframe, Data, udp_bytes, sizeof(frame));
+          if (verbose) {
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		printf("\n=>TX CAN: Header=%s, Data=%s, DLC=%d, frame len= %d", DomoCANframe, Data, udp_bytes, sizeof(frame));
+		}
 
           // Send UDP Ack back to PC with error code 0=OK, 1=NOK
 		  //      Frame = 50 PCID Length=1 ACK/NACK DummyBytes FCS 
@@ -701,7 +736,16 @@ int main(int argc, char **argv) {
         } // END IF RX UDP_CMD=60
 
       } else {
-        if ((verbose) && (!strcmp(UDP_CMD, "70")))  printf("\nRX UDP FCS NOK! (%s-%s<>%s)\n", RX_UDP_Frame, FCS, calc_FCS);
+        if ((verbose) && (!strcmp(UDP_CMD, "70"))) {
+       mytime= localtime(&now);
+  if( strftime(buffer, sizeof buffer, "\n%X", mytime) )
+{
+
+printf("%s ", buffer);
+}
+ 		 printf("\nRX UDP FCS NOK! (%s-%s<>%s)\n", RX_UDP_Frame, FCS, calc_FCS);
+		}
+
       } // END IF FCS ok
 
 
@@ -726,4 +770,3 @@ close(sd);
 
 return 0;
 } // END main
-
