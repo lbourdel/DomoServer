@@ -9,26 +9,36 @@ include_once('/var/www/domocan/www/conf/config.php');
   include '/var/www/domocan/class/class.gradateur.php5';
 
   echo "Bonjour !\n";
+  $StateToSet = $_GET["state"];
 
+if(0) // we don't use sql to avoid write access on SD
+{
+	try {
 
-try {
+	  $conn = new PDO("mysql:host=localhost;dbname=".MYSQL_DB, MYSQL_LOGIN, MYSQL_PWD);
+	  $sql = 'SELECT * FROM Status_PAC';
 
-  $conn = new PDO("mysql:host=localhost;dbname=".MYSQL_DB, MYSQL_LOGIN, MYSQL_PWD);
-  $sql = 'SELECT * FROM Status_PAC';
+	  $result_query = $conn->query($sql);
+	  $row = $result_query->fetch(PDO::FETCH_ASSOC); // only first row (we have only one !!)
+	//  print_r($row);
+	  $status_PAC = $row['bool_status_PAC'];
+	  $counter = $row['counter'];
+	//  print 'Status PAC'.$status_PAC.' Counter: '.$counter;
+	}catch (PDOException $e) {
+	    print "Erreur !: " . $e->getMessage() . "<br/>";
+	    die();
+	}
+}
+else
+{
+print 'TOTO';
+          $status_PAC = !$StateToSet;
+          $counter = 0;
 
-  $result_query = $conn->query($sql);
-  $row = $result_query->fetch(PDO::FETCH_ASSOC); // only first row (we have only one !!)
-//  print_r($row);
-  $status_PAC = $row['bool_status_PAC'];
-  $counter = $row['counter'];
-//  print 'Status PAC'.$status_PAC.' Counter: '.$counter;
-}catch (PDOException $e) {
-    print "Erreur !: " . $e->getMessage() . "<br/>";
-    die();
 }
 
-  $StateToSet = $_GET["state"];
-  //print 'StateToSet : '.$StateToSet;
+  print 'StateToSet : '.$StateToSet;
+  print 'StatusPAC : '.$status_PAC;
 
   $CmdPAC = new gradateur();
 

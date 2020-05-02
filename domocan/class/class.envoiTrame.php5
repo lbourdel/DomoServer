@@ -5,7 +5,7 @@ include_once('/var/www/domocan/www/conf/config.php');
 class envoiTrame {
   /* PREPARATION DU CHECKSUM */
   function checksum() {
-	//LBR
+    //LBR
     $check = 0;
     for ($i = 0; $i <= 14; $i++) {
       $check = $this->trame[$i] + $check;
@@ -16,7 +16,6 @@ class envoiTrame {
 
   /* CONVERSION DE LA TRAME AVEC PACK()  */
   function conversion() {
-    if( ! isset( $this->trame_ok ) ) $this->trame_ok = 0;
     for ($i = 0; $i <= 15; $i++) {
       $this->trame_ok .= pack("c", $this->trame[$i]);
       $trame .= $this->trame[$i];
