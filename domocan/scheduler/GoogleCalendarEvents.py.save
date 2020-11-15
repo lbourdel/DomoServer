@@ -39,7 +39,12 @@ import getopt
 import string
 import time
 
+import ssl
+import urllib.request
 import urllib
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+ssl_context.load_cert_chain(	certfile='/etc/letsencrypt/live/lbourdel.ddns.net/fullchain.pem',
+								keyfile='/etc/letsencrypt/live/lbourdel.ddns.net/privkey.pem')
 
 ###LBRimport xe #for the time comparator
 from feed.date.rfc3339 import tf_from_timestamp #also for the comparator
@@ -182,13 +187,13 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #       print daily_data_point.summary
 
 			#timestartAtLeast = datetime(year= timestart.tm_year, month= timestart.tm_mon, day= timestart.tm_mday, hour= timestart.tm_hour, minute= timestart.tm_min, tzinfo=None)
-			timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=2) #delta +2H en ete +1H en hiver
+			timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=1) #delta +2H en ete +1H en hiver
 			timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 			#print('"line:270 timestart OpenShutter:",timestart)
 
-#                 if(((timestart.tm_hour<8) and (timestart.tm_min<30)) or (timestart.tm_hour<7)): # en hiver
+			if(((timestart.tm_hour<8) and (timestart.tm_min<30)) or (timestart.tm_hour<7)): # en hiver
 
-			if(((timestart.tm_hour<=7) and (timestart.tm_min<30)) or (timestart.tm_hour<=7)):  # en ete
+#			if(((timestart.tm_hour<=7) and (timestart.tm_min<30)) or (timestart.tm_hour<=7)):  # en ete
 #                     startShutter= time.strftime('%Y-%m-%dT', timestart)+'08:00:00'
 					startShutter= time.strftime('%Y-%m-%dT', timestart)+'07:40:00' # en ete
 			else:
@@ -215,7 +220,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #Pas pendant vacances
 			created_event = insert_event(ressource, param_body=eventShutter)
 
-			timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=2) #delta +1H en hiver +2H en ete
+			timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=1) #delta +1H en hiver +2H en ete
 			timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 
 			startShutter=time.strftime('%Y-%m-%dT%H:%M:%S', timestart)
@@ -348,87 +353,87 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 
 			delete_event(ressource, param_eventId=event['id'])
 
-# From web browser : http://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
-	url='http://localhost/domocan/www/php/CmdPAC.php?state='+PACStateToSet
-	print( url)
+# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
+	url='https://localhost/domocan/www/php/CmdPAC.php?state='+PACStateToSet
 	try:
-		url_response = urllib.request.urlopen(url, timeout=5)
+		print( url)
+		url_response = urllib.request.urlopen(url, timeout=5, context=ssl_context)
 	except urllib.error.URLError as e:
-		print(e.reason)
+		print("LBR1"+e.reason)
 	else:
-#    print url_response.info()
+		print( url_response.info())
 		html = url_response.read()
 # do something
-		print( html)
+		#print( "LBR2"+html)
 		url_response.close()  # best practice to close the file
 
 
 def OpenAllShutter():
 	print( 'Ouverture')
 
-#    if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
-	if(datetime.isoweekday(datetime.now())>10): # Never
-#    if(datetime.isoweekday(datetime.now())>0): # Always
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0E&data0=0x26'  # Volet Salon
-		url_response = urllib.request.urlopen(url)
-		html = url_response.read()
-		url_response.close()  # best practice to close the file
-
-		time.sleep( 10 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x0B&data0=0x26' # VR Sdb 1
-		url_response = urllib.request.urlopen(url)
+	if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
+#	if(datetime.isoweekday(datetime.now())>10): # Never
+#	if(datetime.isoweekday(datetime.now())>0): # Always
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0E&data0=0x26'  # Volet Salon
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 3 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x09&data0=0x52' # VR haut cuisine
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x09&data0=0x52' # VR haut cuisine
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
-#    if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
+#	if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
 	if(datetime.isoweekday(datetime.now())>10): # Never
-#    if(datetime.isoweekday(datetime.now())>0): # Always
+#	if(datetime.isoweekday(datetime.now())>0): # Always
 
-		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x02&data0=0x26' # Chambre 3
-		url_response = urllib.request.urlopen(url)
+		time.sleep( 10 )
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x0B&data0=0x26' # VR Sdb 1
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x07&data0=0x26' # Chambre 4
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x02&data0=0x26' # Chambre 3
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x06&data0=0x26' # VR Fixe Chambre Nord
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x07&data0=0x26' # Chambre 4
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x01&data0=0x26' # VR FChambre Nord
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x06&data0=0x26' # VR Fixe Chambre Nord
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x04&data0=0x26' # VR Fixe Chambre Terrasse
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x01&data0=0x26' # VR FChambre Nord
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 0.5 )
-		url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x06&data0=0x26' # VR Chambre Terrasse
-		url_response = urllib.request.urlopen(url)
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x04&data0=0x26' # VR Fixe Chambre Terrasse
+		url_response = urllib.request.urlopen(url, context=ssl_context)
+		html = url_response.read()
+		url_response.close()  # best practice to close the file
+
+		time.sleep( 0.5 )
+		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x06&data0=0x26' # VR Chambre Terrasse
+		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
 		url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x09&data0=0x26' # VR Sdb 2 + Garage
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x09&data0=0x26' # VR Sdb 2 + Garage
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
@@ -436,8 +441,8 @@ def OpenAllShutter():
 		 
 def CloseAllShutter():
 	print('Fermeture Volet')
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0F&data0=0x26'  # Volet Salon
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0F&data0=0x26'  # Volet Salon
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	#    print url_response.info()
 	html = url_response.read()
 	# do something
@@ -445,56 +450,56 @@ def CloseAllShutter():
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x03&data0=0x26' # Chambre 3
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x03&data0=0x26' # Chambre 3
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x06&data0=0x26' # Chambre 4
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x06&data0=0x26' # Chambre 4
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x09&data0=0x52' # VR Sdb 2 + Garage
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x02&entree=0x09&data0=0x52' # VR Sdb 2 + Garage
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x00&data0=0x26' # VR Sdb 1
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x00&data0=0x26' # VR Sdb 1
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x07&data0=0x26' # VR Fixe Chambre Nord
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x07&data0=0x26' # VR Fixe Chambre Nord
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x00&data0=0x26' # VR Chambre Nord
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x04&entree=0x00&data0=0x26' # VR Chambre Nord
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x03&data0=0x26' # VR Fixe Chambre Terrasse
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x03&data0=0x26' # VR Fixe Chambre Terrasse
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x05&data0=0x26' # VR Chambre Terrasse
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x0A&entree=0x05&data0=0x26' # VR Chambre Terrasse
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 
 	time.sleep( 0.5 )
-	url='http://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x08&data0=0x52' # VR haut cuisine
-	url_response = urllib.request.urlopen(url)
+	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x08&data0=0x52' # VR haut cuisine
+	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
 

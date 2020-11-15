@@ -1,2 +1,3 @@
 #!/bin/sh -
-/usr/bin/python3  /var/www/domocan/scheduler/GoogleCalendarEvents.py
+/usr/bin/python3  /var/www/domocan/scheduler/scripts/domo/GoogleCalendarEvents.py
+
