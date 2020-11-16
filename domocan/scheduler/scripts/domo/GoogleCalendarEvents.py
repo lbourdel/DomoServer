@@ -59,11 +59,11 @@ import pprint
 import pytz
 from datetime import datetime, timedelta
 
-sys.path.append('./scripts/forecast/')
+sys.path.append('/var/www/domocan/scheduler/scripts/forecast/')
 from forecast import get_forecast
-sys.path.append('./scripts/calendar/')
+sys.path.append('/var/www/domocan/scheduler/scripts/calendar/')
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
-sys.path.append('./scripts/free/')
+sys.path.append('/var/www/domocan/scheduler/scripts/free/')
 from FreeCamRueSchedule import update_profil_CamRue
 
 wake_interval=8
@@ -86,12 +86,7 @@ def FullTextQuery():
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
 	events_found = get_events(ressource, timeMin, timeMax)
-	PACStateToSet='0'
-	for event in events_found:
-		print( "!!!MATCH!!!   Title query=%s"%event['summary'])
-		print( "Debut : ",event['start'])
-		print( "Fin : ",event['end'])
-
+	PACStateToSet=0
 	for event in events_found:
 		print( "!!!MATCH!!!   Title query=%s"%event['summary'])
 		print( "Debut : ",event['start'])
@@ -99,11 +94,13 @@ def FullTextQuery():
 			
 		if( event['summary']=='DailyControl'):
 			Event_DailyControl(ressource)
+			delete_event(ressource, param_eventId=event['id'])
 			update_profil_CamRue()
 
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
 		if( event['summary']=='WakePAC'):
+			PACStateToSet=1
 			Event_WakePAC(event, ressource)
 
 		if( event['summary']=='OpenShutter'):
@@ -113,9 +110,13 @@ def FullTextQuery():
 		if( event['summary']=='CloseShutter'):
 			Event_CloseShutter()
 			delete_event(ressource, param_eventId=event['id'])
+			
+	SetPACState(PACStateToSet)
 
+	
+def SetPACState(PACStateToSet):
 # From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
-	url='https://localhost/domocan/www/php/CmdPAC.php?state='+PACStateToSet
+	url='https://localhost/domocan/www/php/CmdPAC.php?state='+str(PACStateToSet)
 	try:
 		print( url)
 		url_response = urllib.request.urlopen(url, timeout=5, context=ssl_context)
@@ -130,7 +131,7 @@ def FullTextQuery():
 
 def Event_WakePAC(event, ressource):
 	print( 'ALLUMAGE CHAUFFAGE DONE')
-	PACStateToSet='1'
+
 	if(event.get('description')):
 		event['description']=event['description']+' \nPAC Started'
 	else:
