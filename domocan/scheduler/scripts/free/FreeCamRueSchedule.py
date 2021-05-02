@@ -3,6 +3,7 @@
 
 import requests
 import json
+import base64
 import hmac
 import hashlib
 import datetime
@@ -38,6 +39,7 @@ sunset = (s["sunset"]-datetime.timedelta(minutes=30)).time()
 
 def connexion_post(method,data=None,headers={}):
 	url = "http://mafreebox.freebox.fr/api/v8/"+method
+	print("urlPOST=",url)
 	if data: data = json.dumps(data)
 	response = requests.post(url, data=data, headers=headers).text
 	resultat = json.loads(response)
@@ -45,45 +47,71 @@ def connexion_post(method,data=None,headers={}):
 	if resultat["success"] != True:
 		raise NameError('!!POST call FAILED !!')
 		print("Result KO")
+	print("resultatPOST=", resultat)
 	return resultat
 
 def connexion_put(method,data=None,headers={}):
 	url = "http://mafreebox.freebox.fr/api/v8/"+method
+	print("urlPUT=",url)
 	if data: data = json.dumps(data) 
 	resultat = json.loads(requests.put(url, data=data, headers=headers).text)
 
 	if resultat["success"] != True:
 		raise NameError('!!PUT call FAILED !!')
 		print("Result KO")
+	print("resultatPUT=", resultat)
 	return resultat
 
 def connexion_get(method, headers={}):
 	url = "http://mafreebox.freebox.fr/api/v8/"+method 
+	print("urlGET=",url)
 	resultat = json.loads(requests.get(url, headers=headers).text)
 
 	if resultat["success"] != True:
 		raise NameError('!!GET call FAILED !!')
 		print("Result KO")
+	print("resultatGet=", resultat)
 	return resultat
 	
 def mksession():
-	token = b'nK3U2oRc6C7JejudI1DNjC87sIw+mY3mFCVmZO+giZHGOciindwk6TK53P5ZCMvk'
-	challenge=connexion_get("login/")["result"]["challenge"]
+# Attention a ne pas avoir de antislash \ dans le token car pb avec 
+# {"success":true,"result":{"app_token":"Rv7udEUk2UDT0wKu+E2PxZcEZQGNE3sJxYfGe2IUO5+vqtV+J6UoQsBgbhD5PR0L","track_id":1}}
+
+# {"success":true,"result":{"status":"granted","challenge":"bWJfGdCTh5+onbz0UIArjxbzWDZcVhQY","password_salt":"hZBntmbZ\/WE7UzwfYeoU7aEgquerOG6W"}}
+
+# Revolution 
+# token = b'nK3U2oRc6C7JejudI1DNjC87sIw+mY3mFCVmZO+giZHGOciindwk6TK53P5ZCMvk'
+# Delta Pop
+	app_token =   b"Rv7udEUk2UDT0wKu+E2PxZcEZQGNE3sJxYfGe2IUO5+vqtV+J6UoQsBgbhD5PR0L"
+	
+	resultat = connexion_get("login/")
+	# print('resultat=',resultat)
+	challenge = resultat["result"]["challenge"]
+	print('challenge=',challenge)
+
+
 	data={
-		"app_id": "fr.freebox.testapp",
-		"password": hmac.new(token,challenge.encode('utf-8'),hashlib.sha1).hexdigest()
+		"app_id": "fr.freebox.python",
+		"password": hmac.new(app_token,challenge.encode('utf-8'),hashlib.sha1).hexdigest()
 	}
+	print('data=',data)
 
-	return connexion_post("login/session/",data)["result"]["session_token"]
-
+	# resultat = connexion_post("login/session/",data)["result"]["session_token"]
+	resultat = connexion_post("login/session/",data)
+	# print('resultat=',resultat)
+	return resultat["result"]["session_token"]
+	
 def SearchNetworkProfile(name, session_token):
 	# method_get = "network_control"
 	method_get = "profile"
 	resultat =  connexion_get(method_get, headers={"X-Fbx-App-Auth": session_token})
 	data = resultat["result"]
+	print("SearchNetworkProfile=",resultat)
 
+	# Pensez a creer un profil Foscam
 	for val in resultat["result"]:
 		if "Foscam" in val["name"]:
+			print("id=", val["id"])
 			return val["id"]
 
 def NetworkProfile(profile_id, session_token):
@@ -110,7 +138,9 @@ def RuleControlCamera(profile_id,session_token):
 	method_get = "network_control/"+str(profile_id)+"/rules"
 
 	resultat =  connexion_get(method_get, headers={"X-Fbx-App-Auth": session_token})
+	# Pensez a mettre une pause planifié dans le profil Foscam sinon pas de tableau [0]
 	data = resultat["result"][0]
+	print("data=",data)
 
 	method_put = "network_control/"+str(profile_id)+"/rules/"+str(data["id"])
 	data["enabled"]= True
@@ -137,13 +167,14 @@ def update_profil_CamRue():
 
 	profile_id = SearchNetworkProfile("Foscam", session_token)
 
-	# NetworkProfile(profile_id, session_token)
+	NetworkProfile(profile_id, session_token)
 
 	RuleControlCamera(profile_id,session_token)
 
 	Logout(session_token)
 
 if __name__ == '__main__':
+   
 	update_profil_CamRue()
 
 

@@ -187,13 +187,13 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #       print daily_data_point.summary
 
 			#timestartAtLeast = datetime(year= timestart.tm_year, month= timestart.tm_mon, day= timestart.tm_mday, hour= timestart.tm_hour, minute= timestart.tm_min, tzinfo=None)
-			timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=1) #delta +2H en ete +1H en hiver
+			timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=2) #delta +2H en ete +1H en hiver
 			timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 			#print('"line:270 timestart OpenShutter:",timestart)
 
-			if(((timestart.tm_hour<8) and (timestart.tm_min<30)) or (timestart.tm_hour<7)): # en hiver
+#			if(((timestart.tm_hour<8) and (timestart.tm_min<30)) or (timestart.tm_hour<7)): # en hiver
 
-#			if(((timestart.tm_hour<=7) and (timestart.tm_min<30)) or (timestart.tm_hour<=7)):  # en ete
+			if(((timestart.tm_hour<=7) and (timestart.tm_min<30)) or (timestart.tm_hour<=7)):  # en ete
 #                     startShutter= time.strftime('%Y-%m-%dT', timestart)+'08:00:00'
 					startShutter= time.strftime('%Y-%m-%dT', timestart)+'07:40:00' # en ete
 			else:
@@ -220,7 +220,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #Pas pendant vacances
 			created_event = insert_event(ressource, param_body=eventShutter)
 
-			timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=1) #delta +1H en hiver +2H en ete
+			timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=2) #delta +1H en hiver +2H en ete
 			timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 
 			startShutter=time.strftime('%Y-%m-%dT%H:%M:%S', timestart)
