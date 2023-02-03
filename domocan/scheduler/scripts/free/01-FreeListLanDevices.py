@@ -14,6 +14,9 @@ def connexion_post(method,data=None,headers={}):
 def connexion_get(method, headers={}):
 	url = "http://mafreebox.freebox.fr/api/v8/"+method
 	return json.loads(requests.get(url, headers=headers).text)
+def connexion_get_api_version(method, headers={}):
+	url = "http://mafreebox.freebox.fr/api_version"
+	return json.loads(requests.get(url, headers=headers).text)
 	
 def mksession():
 # Attention a ne pas avoir de antislash \ dans le token car pb avec 
@@ -64,7 +67,8 @@ password_salt = json.loads(r.text)['result']['password_salt']
 
 session_token = mksession() #création session API Freebox
 
-textreturned = recherche_app(session_token)
+# textreturned = recherche_app(session_token)
 
+textreturned = connexion_get_api_version(session_token)
 print(textreturned)
 

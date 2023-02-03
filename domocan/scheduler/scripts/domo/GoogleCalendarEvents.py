@@ -1,3 +1,4 @@
+WinterTime = True
 '''
 Go to https://code.google.com/apis/console/ and:
 - create a new project,
@@ -65,8 +66,84 @@ sys.path.append('/var/www/domocan/scheduler/scripts/calendar/')
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
 sys.path.append('/var/www/domocan/scheduler/scripts/free/')
 from FreeCamRueSchedule import update_profil_CamRue
+import json
 
 wake_interval=8
+
+def addTempoEventCalendar(couleur, jours):
+	ressource = init_calendar()
+
+	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+
+	startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
+	print(startTempo)
+	# print( timestamp_from_tf(startTempo))
+	# print( tf_from_timestamp(startTempo))
+	endTempo=timestamp_from_tf(  tf_from_timestamp(startTempo) +15*3600)
+	# .replace(tzinfo=pytz.timezone('UTC'))
+	print(endTempo)
+	eventShutter = {
+		'summary': couleur['couleurJourJ1'],
+		'location': 'Cesson-Sevigne, France',
+		'start': {
+			'dateTime': startTempo,
+	#                         'timeZone': 'Europe/Paris(
+		},
+		'end': {
+			'dateTime':  endTempo, # startOpenShutter+1H
+	#                        'timeZone': 'Europe/Paris'
+		},
+		'description': 'ROUGE:'+str(jours['PARAM_NB_J_ROUGE'])+'\nBLANC:'+str(jours['PARAM_NB_J_BLANC'])+'\nBLEU:'+str(jours['PARAM_NB_J_BLEU']),
+
+	}
+
+	created_event = insert_event(ressource, param_body=eventShutter)
+	print(  created_event   )
+
+def GetJourTempo():
+# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
+	url='https://particulier.edf.fr/services/rest/referentiel/getNbTempoDays?TypeAlerte=TEMPO'
+	try:
+		# print( url)
+		url_response = urllib.request.urlopen(url, timeout=5)
+	except urllib.error.URLError as e:
+		print(e.reason)
+	else:
+		# print( url_response.info())
+		html = url_response.read()
+# do something
+		url_response.close()  # best practice to close the file
+		strtempo=html.decode('ascii')
+
+
+		result = json.loads(strtempo)
+		# print( result['PARAM_NB_J_BLANC'])
+
+# {'PARAM_NB_J_BLANC': 24, 'PARAM_NB_J_ROUGE': 7, 'PARAM_NB_J_BLEU': 177}
+		return result
+
+def GetCouleurTempo(date):
+# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
+	url='https://particulier.edf.fr/services/rest/referentiel/searchTempoStore?dateRelevant=' + date
+	try:
+		# print( url)
+		url_response = urllib.request.urlopen(url, timeout=5)
+	except urllib.error.URLError as e:
+		print(e.reason)
+	else:
+		# print( url_response.info())
+		html = url_response.read()
+		# print( html)
+# do something
+		url_response.close()  # best practice to close the file
+		strtempo=html.decode('ascii')
+
+		result = json.loads(strtempo)
+		# print( result['couleurJourJ'] )
+
+# {'couleurJourJ': 'TEMPO_BLANC', 'couleurJourJ1': 'TEMPO_BLANC'}
+		return result
+
 
 def FullTextQuery():
 	ressource = init_calendar()
@@ -91,11 +168,16 @@ def FullTextQuery():
 		print( "!!!MATCH!!!   Title query=%s"%event['summary'])
 		print( "Debut : ",event['start'])
 		print( "Fin : ",event['end'])
-			
+
+		if( event['summary']=='DailyTempo'):
+			Event_TempoControl(ressource)
+			delete_event(ressource, param_eventId=event['id'])
+			#update_profil_CamRue()
+
 		if( event['summary']=='DailyControl'):
 			Event_DailyControl(ressource)
 			delete_event(ressource, param_eventId=event['id'])
-			update_profil_CamRue()
+			#update_profil_CamRue()
 
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
@@ -110,10 +192,10 @@ def FullTextQuery():
 		if( event['summary']=='CloseShutter'):
 			Event_CloseShutter()
 			delete_event(ressource, param_eventId=event['id'])
-			
+
 	SetPACState(PACStateToSet)
 
-	
+
 def SetPACState(PACStateToSet):
 # From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
 	url='https://localhost/domocan/www/php/CmdPAC.php?state='+str(PACStateToSet)
@@ -139,6 +221,13 @@ def Event_WakePAC(event, ressource):
 
 	updated_event = update_event( ressource, param_eventId=event['id'], param_event=event)
 
+def Event_TempoControl(ressource):
+	
+	JourTempo = GetJourTempo()
+	CouleurTempo = GetCouleurTempo( datetime.now().strftime('%Y-%m-%d') )
+	
+	addTempoEventCalendar( CouleurTempo , JourTempo)
+	
 
 def Event_DailyControl(ressource):
 	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
@@ -239,7 +328,10 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #       print daily_data_point.summary
 
 	#timestartAtLeast = datetime(year= timestart.tm_year, month= timestart.tm_mon, day= timestart.tm_mday, hour= timestart.tm_hour, minute= timestart.tm_min, tzinfo=None)
-	timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=2) #delta +2H en ete +1H en hiver
+	if( WinterTime==True):
+		timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=1) #delta +1H en hiver
+	else:
+		timestartAtLeast = by_day.data[1].sunriseTime + timedelta(hours=2) #delta +2H en ete
 	timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 	#print('"line:270 timestart OpenShutter:",timestart)
 
@@ -272,7 +364,10 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 #Pas pendant vacances
 	created_event = insert_event(ressource, param_body=eventShutter)
 
-	timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=2) #delta +1H en hiver +2H en ete
+	if( WinterTime==True):
+		timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=1) #delta +1H en hiver
+	else:
+		timestartAtLeast = by_day.data[1].sunsetTime + timedelta(hours=2) #delta  +2H en ete
 	timestart = time.strptime('%s'%timestartAtLeast, "%Y-%m-%d %H:%M:%S")
 
 	startShutter=time.strftime('%Y-%m-%dT%H:%M:%S', timestart)
@@ -313,7 +408,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 	print('by_day.data[1].apparentTemperatureMin=%s'%by_day.data[1].apparentTemperatureMin)
 	#print 'Delta=%ss ou %s mn'%(delta,delta/60) #timestamp unit
 
-# If night heat more than 23:30 to 07:15, heat on afternoon
+# If night heat more than 22:00 to 05:45 = 07:45, heat on afternoon
 	if( (delta > (7*60*60+45*60)) and (by_day.data[0].cloudCover>0.7) and (by_day.data[1].cloudCover>0.7) ):  # 7:45
 		delta1=delta-(7*60*60+45*60)
 		delta=(7*60*60+45*60)
@@ -338,7 +433,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 		created_event = insert_event(ressource, param_body=eventWakePAC)
 
 #Arret a la fin de l'heure creuse 07h30
-	today_end_off_peak_hour= datetime.now().strftime('%Y-%m-%dT')+'07:15:00'+TZ_OFFSET
+	today_end_off_peak_hour= datetime.now().strftime('%Y-%m-%dT')+'05:45:00'+TZ_OFFSET
 	end_time_timestamp =  tf_from_timestamp(today_end_off_peak_hour)
 	today_end_off_peak_hour=  timestamp_from_tf(end_time_timestamp + 24*60*60) # +24H
 #Calcul duree chauffage
@@ -382,8 +477,8 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 def Event_OpenShutter():
 	print( 'Ouverture')
 
-	if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
-#	if(datetime.isoweekday(datetime.now())>10): # Never
+#	if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
+	if(datetime.isoweekday(datetime.now())>10): # Never
 #	if(datetime.isoweekday(datetime.now())>0): # Always
 		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0E&data0=0x26'  # Volet Salon
 		url_response = urllib.request.urlopen(url, context=ssl_context)
@@ -391,6 +486,9 @@ def Event_OpenShutter():
 		url_response.close()  # best practice to close the file
 
 		time.sleep( 3 )
+#       if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
+#        if(datetime.isoweekday(datetime.now())>10): # Never
+	if(datetime.isoweekday(datetime.now())>0): # Always
 		url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x09&data0=0x52' # VR haut cuisine
 		url_response = urllib.request.urlopen(url, context=ssl_context)
 		html = url_response.read()
@@ -447,7 +545,7 @@ def Event_OpenShutter():
 	url_response = urllib.request.urlopen(url, context=ssl_context)
 	html = url_response.read()
 	url_response.close()  # best practice to close the file
-		 
+ 
 def Event_CloseShutter():
 	print('Fermeture Volet')
 	url='https://localhost/domocan/www/php/CmdVR.php?carte=0x06&entree=0x0F&data0=0x26'  # Volet Salon
