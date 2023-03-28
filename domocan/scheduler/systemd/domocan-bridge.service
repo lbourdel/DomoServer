@@ -6,7 +6,7 @@
   Type=oneshot
   RemainAfterExit=yes
   ExecStartPre=/bin/sleep 120
-  ExecStart=/var/www/domocan/bin/domocan-bridge -b 192.168.1.255
+  ExecStart=/var/www/domocan/bin/domocan-bridgeV2 -b 192.168.1.255
   #ExecStop=nothing
   RestartSec=60
 

@@ -69,11 +69,32 @@ from FreeCamRueSchedule import update_profil_CamRue
 import json
 
 wake_interval=8
+event_tempo=''
+HP_Rouge_Chauffage_Interdit = False
+#We add TZ_OFFSET in timeMin/timeMax
+TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+ressource = init_calendar()
+	
+def sendToWhatApp(text):
+	return False # Service down payment needed after trial
+	text = text.replace(" ","+")
+	baseURL = 'https://api.callmebot.com/whatsapp.php?phone=33609863994&text='+text+'&apikey=3011836'
+	req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
+	# print(baseURL)
+	f = urllib.request.urlopen(req )
+	html = f.read()
+	# print(html) 
+	f.close()
 
 def addTempoEventCalendar(couleur, jours):
-	ressource = init_calendar()
 
-	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+	if 'BLAN' in couleur['couleurJourJ1']:
+		colorId='8'
+	if 'ROUGE' in couleur['couleurJourJ1']:
+		colorId='11'
+	if 'BLEU' in couleur['couleurJourJ1']:
+		colorId='9'
+	sendToWhatApp('Demain jour ' + couleur['couleurJourJ1'])
 
 	startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
 	print(startTempo)
@@ -94,7 +115,15 @@ def addTempoEventCalendar(couleur, jours):
 	#                        'timeZone': 'Europe/Paris'
 		},
 		'description': 'ROUGE:'+str(jours['PARAM_NB_J_ROUGE'])+'\nBLANC:'+str(jours['PARAM_NB_J_BLANC'])+'\nBLEU:'+str(jours['PARAM_NB_J_BLEU']),
-
+ # Red background. Use Calendar.Colors.get() for the full list.
+		'colorId': colorId,
+	'reminders': {
+		'useDefault': False,
+		'overrides': [
+		  # {'method': 'email', 'minutes': 24 * 60},
+		  {'method': 'popup', 'minutes': 24 * 60},
+		],
+	},
 	}
 
 	created_event = insert_event(ressource, param_body=eventShutter)
@@ -146,18 +175,16 @@ def GetCouleurTempo(date):
 
 
 def FullTextQuery():
-	ressource = init_calendar()
+
 
 #We add TZ_OFFSET in timeMin/timeMax
-	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
-
 	timeMin=(datetime.now()+ timedelta(minutes=-(wake_interval/2))).isoformat()+TZ_OFFSET
 	timeMax=(datetime.now()+ timedelta(minutes=+(wake_interval/2)+1)).isoformat()+TZ_OFFSET
 
 # add timezone
-	print('timeMin=%s'%timeMin,'ajouter offset\n')
-	print('timeMax=%s'%timeMax,'ajouter offset\n')
-	print(' Getting all events from this calendar ID')
+	# print('timeMin=%s'%timeMin,'ajouter offset\n')
+	# print('timeMax=%s'%timeMax,'ajouter offset\n')
+	# print(' Getting all events from this calendar ID')
 #    pprint.pprint(events)
 
 # Accessing the response like a dict object with an 'items' key
@@ -169,14 +196,21 @@ def FullTextQuery():
 		print( "Debut : ",event['start'])
 		print( "Fin : ",event['end'])
 
+		if( 'TEMPO_' in event['summary']):
+			if( 'ROUGE' in event['summary']):
+				HP_Rouge_Chauffage_Interdit = True
+			else:
+				HP_Rouge_Chauffage_Interdit = False
+			event_tempo=event['id']
+			
 		if( event['summary']=='DailyTempo'):
 			Event_TempoControl(ressource)
 			delete_event(ressource, param_eventId=event['id'])
-			#update_profil_CamRue()
 
 		if( event['summary']=='DailyControl'):
 			Event_DailyControl(ressource)
 			delete_event(ressource, param_eventId=event['id'])
+			delete_event(ressource, param_eventId=event_tempo) # On peut supprimer l'event TAMPO du jour
 			#update_profil_CamRue()
 
 # Accessing the response like a dict object with an 'items' key
@@ -230,8 +264,6 @@ def Event_TempoControl(ressource):
 	
 
 def Event_DailyControl(ressource):
-	TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
-
 # What the weather like ?
 	forecast = get_forecast()
 
@@ -409,7 +441,7 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 	#print 'Delta=%ss ou %s mn'%(delta,delta/60) #timestamp unit
 
 # If night heat more than 22:00 to 05:45 = 07:45, heat on afternoon
-	if( (delta > (7*60*60+45*60)) and (by_day.data[0].cloudCover>0.7) and (by_day.data[1].cloudCover>0.7) ):  # 7:45
+	if( (delta > (7*60*60+45*60)) and (by_day.data[0].cloudCover>0.7) and (by_day.data[1].cloudCover>0.7) ) and not HP_Rouge_Chauffage_Interdit:  # 7:45
 		delta1=delta-(7*60*60+45*60)
 		delta=(7*60*60+45*60)
 		print('delta1=%ss ou %s mn'%(delta1,delta1/60)) #timestamp unit
@@ -431,8 +463,10 @@ by_day.data[daynumber].temperatureMin, by_day.data[daynumber].apparentTemperatur
 		}
 
 		created_event = insert_event(ressource, param_body=eventWakePAC)
+	elif delta > (7*60*60+45*60):
+		delta= (7*60*60+45*60)
 
-#Arret a la fin de l'heure creuse 07h30
+#Arret a la fin de l'heure creuse 06h30
 	today_end_off_peak_hour= datetime.now().strftime('%Y-%m-%dT')+'05:45:00'+TZ_OFFSET
 	end_time_timestamp =  tf_from_timestamp(today_end_off_peak_hour)
 	today_end_off_peak_hour=  timestamp_from_tf(end_time_timestamp + 24*60*60) # +24H

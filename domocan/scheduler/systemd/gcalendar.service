@@ -7,7 +7,7 @@
   Type=simple
 #  RemainAfterExit=yes
   ExecStartPre=/bin/sleep 1
-  ExecStart=/home/pi/CalendarGoogle/scriptToRun.sh
+  ExecStart=/var/www/domocan/scheduler/scriptToRun.sh
   #ExecStop=nothing
 #  RestartSec=100
 

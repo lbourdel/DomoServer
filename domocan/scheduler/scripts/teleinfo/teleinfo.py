@@ -3,6 +3,7 @@
 # nohup python3 teleinfo.py >/dev/null 2>&1 &
 
 import sys
+import paho.mqtt.client as mqtt
 
 sys.path.append( "/var/www/domocan/scheduler/scripts/calendar" )
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
@@ -27,21 +28,21 @@ import urllib.request
 
 	# startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
 	# print(startTempo)
-	print( timestamp_from_tf(startTempo))
-	print( tf_from_timestamp(startTempo))
+	# print( timestamp_from_tf(startTempo))
+	# print( tf_from_timestamp(startTempo))
 	# endTempo=timestamp_from_tf(  tf_from_timestamp(startTempo) +15*3600)
-	.replace(tzinfo=pytz.timezone('UTC'))
+	# .replace(tzinfo=pytz.timezone('UTC'))
 	# print(endTempo)
 	# eventShutter = {
 		# 'summary': 'couleur',
 		# 'location': 'Cesson-Sevigne, France',
 		# 'start': {
 			# 'dateTime': startTempo,
-	                        'timeZone': 'Europe/Paris(
+	                        # 'timeZone': 'Europe/Paris(
 		# },
 		# 'end': {
 			# 'dateTime':  endTempo, # startOpenShutter+1H
-	                       'timeZone': 'Europe/Paris'
+	                       # 'timeZone': 'Europe/Paris'
 		# },
 
 	# }
@@ -101,6 +102,7 @@ def checksum(chaine):
 
 
 def sendToWhatApp(text):
+	return False # Service down payment needed after trial
 	text = text.replace(" ","+")
 	baseURL = 'https://api.callmebot.com/whatsapp.php?phone=33609863994&text='+text+'&apikey=3011836'
 	req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
@@ -109,7 +111,10 @@ def sendToWhatApp(text):
 	html = f.read()
 	# print(html) 
 	f.close()
-	
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+
 # Main progrram start here
 # ========================
 try:
@@ -161,8 +166,9 @@ except:
 
 
 stri = ''
-counter = 0
-counterMax=20
+counterIINST = 0
+counterPAPP = 0
+counterMax=10
 courantImean = 0
 puissancePmean = 0
 channel = thingspeak.Channel(id=2015860, api_key='Z5YSPQP20HU3IPD7')
@@ -183,6 +189,7 @@ compteur_JBlanc_HC_old = ''
 compteur_JBlanc_HP_old = ''
 compteur_JRouge_HC_old = ''
 compteur_JRouge_HP_old = ''
+# abonnement 9kVA 14.82€ TTC 15.33 +3.44%
 tarif_JBleu_HC = 0.097 # 0.0862		# + 2,56 %
 tarif_JBleu_HP = 0.1249 # 0.1272		# - 8,73 %
 tarif_JBlanc_HC = 0.114 # 0.1112		# + 12,49 %
@@ -190,6 +197,9 @@ tarif_JBlanc_HP = 0.1508 # 0.1653		# - 1,82 %
 tarif_JRouge_HC = 0.1216 # 0.1222		# - 0,56 %
 tarif_JRouge_HP = 0.6712 # 0.5486		# + 22,35 %
 
+client = mqtt.Client()
+client.on_connect = on_connect
+client.connect("localhost", 1883, 60)
 
 while True:
 	try:
@@ -199,7 +209,7 @@ while True:
 		exit()
 
 	# print(c);
-	compteur_JBleu_HC_Old = compteur_JBleu_HC
+	# compteur_JBleu_HC_Old = compteur_JBleu_HC
 	if c.decode('ascii')=='\n':
 		stri=''
 	elif c.decode('ascii')=='\r':
@@ -272,57 +282,48 @@ while True:
 					# print(striList[ : -1])
 					courantI = striList[1]
 					msg = 'OVER CURRENT '+striList[0] + '=' +striList[1] 
+					client.publish('linky/IAlert', payload=striList[1], qos=0, retain=False)
 					sendToWhatApp(msg)
 
 				if stri.startswith("IINST"):
 					# print(striList[ : -1])
 					courantI = striList[1]
-
-					if counter < counterMax:
-						# counter+=1
-						courantImean += int(courantI)
-					else:
-						courantImean/=counter
-						# baseURL = 'https://api.thingspeak.com/update?api_key=B9YWLL85191R9CGR&field1='+str(courantImean)
-						# req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
-						# print(baseURL)
-						# f = urllib.request.urlopen(req )
-						# html = f.read()
-						# print(html) 
-						# f.close()
-						# time.sleep(2)
+					courantImean += int(courantI)
+					counterIINST+=1
+					# print( counterIINST )
+					client.publish('linky/Irms', payload=(courantI), qos=0, retain=False)
+					if counterIINST >= counterMax:
+						courantImean/=counterIINST
 						print('======>',courantImean)
-						# counter=0
-						# courantImean=0
+						counterIINST=0
 					# print( courantI )
 					# print( courantImean )
 
 				if stri.startswith("PAPP"):
 					# print(striList[ : -1])
 					puissanceP = striList[1]
-					if counter < counterMax:
-						counter+=1
-						puissancePmean += int(puissanceP)
-					else:
-						puissancePmean/=counter
-						# baseURL = 'https://api.thingspeak.com/update?api_key=B9YWLL85191R9CGR&field2='+str(puissancePmean)
-						# req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
-						# print(baseURL)
-						# f = urllib.request.urlopen(req )
-						# html = f.read()
-						# print(html) 
-						# f.close()
+					puissancePmean += int(puissanceP)
 
+					counterPAPP+=1
+					print( counterPAPP )
+					client.publish('linky/Papp', payload=(puissanceP), qos=0, retain=False)
+					if counterPAPP >= counterMax:
+						puissancePmean/=counterPAPP
 						print('======>',puissancePmean)
-						counter=0
+						counterPAPP=0
 						StoreToCloud = True
-						# puissancePmean=0
 						# print( puissanceP )
-
 
 		if StoreToCloud==True:
 			StoreToCloud=False
 			try:
+				# baseURL = 'https://api.thingspeak.com/update?api_key=B9YWLL85191R9CGR&field2='+str(puissancePmean)
+				# req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
+				# print(baseURL)
+				# f = urllib.request.urlopen(req )
+				# html = f.read()
+				# print(html) 
+				# f.close()
 				# response = channel.update({'field1': courantImean, 'field2': puissancePmean})
 				response = channel.update({'field1': courantImean})
 			except:
