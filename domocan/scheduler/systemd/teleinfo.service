@@ -1,0 +1,14 @@
+[Unit]
+Description=A script to run mqtt server
+After=syslog.target network.target
+
+[Service]
+WorkingDirectory=/var/www/domocan/scheduler/scripts/teleinfo
+ExecStart=/usr/bin/python3 /var/www/domocan/scheduler/scripts/teleinfo/teleinfo.py
+
+Restart=always
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target
+
