@@ -2,7 +2,7 @@
 
 # nohup python3 teleinfo.py >/dev/null 2>&1 &
 
-import sys
+import sys, time
 import paho.mqtt.client as mqtt
 
 sys.path.append( "/var/www/domocan/scheduler/scripts/calendar" )
@@ -112,10 +112,19 @@ def sendToWhatApp(text):
 	# print(html) 
 	f.close()
 
+
+def mqtt_publish(topic, payload):
+        mqtt_client.publish(topic, payload=striList[1], qos=0, retain=False)
+
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
 
-# Main progrram start here
+def on_disconnect(client, userdata, rc):
+    print("Unexpected disconnection  {rc}")
+    if rc != 0:
+        print("Unexpected disconnection.")
+
+# Main program start here
 # ========================
 try:
     opts, args = getopt.getopt(argv, "hlsp:", ["help", "list", "standard", "port="])
@@ -197,9 +206,12 @@ tarif_JBlanc_HP = 0.1508 # 0.1653		# - 1,82 %
 tarif_JRouge_HC = 0.1216 # 0.1222		# - 0,56 %
 tarif_JRouge_HP = 0.6712 # 0.5486		# + 22,35 %
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.connect("localhost", 1883, 60)
+mqtt_client = mqtt.Client()
+mqtt_client.on_connect = on_connect
+mqtt_client.on_connect = on_disconnect
+print('mqtt connection ')
+mqtt_client.connect("localhost", port=1883, keepalive=300)
+
 
 while True:
 	try:
@@ -282,7 +294,7 @@ while True:
 					# print(striList[ : -1])
 					courantI = striList[1]
 					msg = 'OVER CURRENT '+striList[0] + '=' +striList[1] 
-					client.publish('linky/IAlert', payload=striList[1], qos=0, retain=False)
+					mqtt_publish('linky/IAlert', payload=striList[1])
 					sendToWhatApp(msg)
 
 				if stri.startswith("IINST"):
@@ -291,7 +303,7 @@ while True:
 					courantImean += int(courantI)
 					counterIINST+=1
 					# print( counterIINST )
-					client.publish('linky/Irms', payload=(courantI), qos=0, retain=False)
+					mqtt_publish('linky/Irms', payload=courantI)
 					if counterIINST >= counterMax:
 						courantImean/=counterIINST
 						print('======>',courantImean)
@@ -306,7 +318,7 @@ while True:
 
 					counterPAPP+=1
 					print( counterPAPP )
-					client.publish('linky/Papp', payload=(puissanceP), qos=0, retain=False)
+					mqtt_publish('linky/Papp', payload=(puissanceP))
 					if counterPAPP >= counterMax:
 						puissancePmean/=counterPAPP
 						print('======>',puissancePmean)
