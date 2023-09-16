@@ -69,7 +69,7 @@ baseurl='http://82.66.27.135/domocan/www/php/'
 ressource = init_calendar()
 
 def get_forecast():
-	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.12&longitude=-1.60&hourly=temperature_2m,relativehumidity_2m,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=sunrise,sunset&forecast_days=2&timeformat=unixtime&timezone=Europe%2FParis'
+	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=auto&forecast_days=1'
 
 	res = requests.get(url)
 	data = res.json()
@@ -113,8 +113,36 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 		},
 	}
 	created_event = insert_event(ressource, param_body=eventShutter)
+from statistics import mean
 
 def Event_DailyControlPAC(ressource, forecast):
+	index_start =  9 # only daylight values
+	index_end =  18 # only daylight values
+	mean_cloud = int(mean(forecast['hourly']['cloudcover'][index_start:index_end]))
+	mean_cloud_low = int(mean(forecast['hourly']['cloudcover_low'][index_start:index_end]))
+	mean_cloud_mid = int(mean(forecast['hourly']['cloudcover_mid'][index_start:index_end]))
+	mean_cloud_high = int(mean(forecast['hourly']['cloudcover_high'][index_start:index_end]))
+	mean_temp2m = int(mean(forecast['hourly']['temperature_2m']))
+	mean_apparenttemp = int(mean(forecast['hourly']['apparent_temperature']))
+
+	timesunsetTime=datetime.now( tz=pytz.timezone('Europe/Paris'))
+	timesunsetTimeEnd = timesunsetTime + timedelta(hours=1)
+
+	eventShutter = {
+		'summary': 'WakePAC',
+		'location': 'Cesson-Sevigne, France',
+		'start': {
+			'dateTime': timesunsetTime.strftime('%Y-%m-%dT%H:%M:%S%z'), 
+		},
+		'end': {
+			'dateTime':  timesunsetTimeEnd.strftime('%Y-%m-%dT%H:%M:%S%z'), # +60mn
+		},
+		'description': 'mean_cloud: '+str(mean_cloud)+'\nmean_cloud_low under 3km: '+str(mean_cloud_low)\
+		+'\nmean_cloud_mid 3 to 8km: '+str(mean_cloud_mid)+'\nmean_cloud_high over 8km: '+str(mean_cloud_high)\
+		+'\nmean_temp2m: '+str(mean_temp2m)+'\nmean_apparenttemp: '+str(mean_apparenttemp),
+	}
+	created_event = insert_event(ressource, param_body=eventShutter)
+
 	return
 
 def Event_WakePAC(event, ressource):
@@ -362,7 +390,7 @@ def Event_Calendar(ressource):
 			# What the weather like ?
 			forecast = get_forecast()
 			Event_DailyControlShutter(ressource, forecast['daily'] )
-			Event_DailyControlPAC(ressource, forecast)
+			Event_DailyControlPAC(ressource, forecast['daily'])
 			delete_event(ressource, param_eventId=event['id'])
 			if event_tempo:
 				delete_event(ressource, param_eventId=event_tempo) # On peut supprimer l'event TEMPO du jour
@@ -393,7 +421,8 @@ def callable_func():
 	print( "-------------end------------")
 
 if __name__ == '__main__':
-	# forecast = get_forecast()
+	forecast = get_forecast()
+	Event_DailyControlPAC(ressource,forecast)
 	if len(sys.argv)>1:
 		scheduler = sys.argv[1]
 	else:
