@@ -55,7 +55,11 @@ import json
 
 import requests
 from datetime import datetime, timedelta, timezone
-sys.path.append('/var/www/domocan/scheduler/scripts/calendar/')
+if platform.system()=='Linux':
+	sys.path.append('/var/www/domocan/scheduler/scripts/calendar/')
+else:
+	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../calendar/')
+
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
 from apscheduler.schedulers.background import BackgroundScheduler  #this will let us check the calender on a regular interval
 
@@ -78,8 +82,8 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 
 	timesunriseTime=datetime.fromtimestamp(  by_day['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
 	timesunriseTimeEnd = timesunriseTime + timedelta(hours=1)
-	timesunsetTime=datetime.fromtimestamp(  by_day['sunset'][1], tz=pytz.timezone('Europe/Paris')) + timedelta(hours=1)
-	timesunsetTimeEnd = timesunsetTime + timedelta(hours=2)
+	timesunsetTime=datetime.fromtimestamp(  by_day['sunset'][1], tz=pytz.timezone('Europe/Paris')) + timedelta(min=30)
+	timesunsetTimeEnd = timesunsetTime + timedelta(hours=1)
 
 # !!!Pour ouverture volet roulant!!!
 	eventShutter = {
@@ -389,6 +393,7 @@ def callable_func():
 	print( "-------------end------------")
 
 if __name__ == '__main__':
+	# forecast = get_forecast()
 	if len(sys.argv)>1:
 		scheduler = sys.argv[1]
 	else:

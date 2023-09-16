@@ -25,7 +25,7 @@ from google.auth.transport.requests import Request
 if platform.system()=='Linux':
 	path_to_api_keys='/home/pi/CalendarGoogle/'
 else:
-	path_to_api_keys='D:\\Domocan_Avril2020\\ApiKeys\\CalendarAPIKey'
+	path_to_api_keys=os.path.dirname(os.path.abspath(__file__))+'\\..\\CalendarAPIKey'
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
