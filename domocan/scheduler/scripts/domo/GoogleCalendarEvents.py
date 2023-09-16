@@ -153,8 +153,8 @@ def Event_OpenShutter():
 		http_post(url)
 
 #	if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
-	# if(datetime.isoweekday(datetime.now())>10): # Never
-	if(datetime.isoweekday(datetime.now())>0): # Always
+	if(datetime.isoweekday(datetime.now())>10): # Never
+	# if(datetime.isoweekday(datetime.now())>0): # Always
 
 		time.sleep( 10 )
 		url=baseurl+'CmdVR.php?carte=0x0A&entree=0x0B&data0=0x26' # VR Sdb 1
