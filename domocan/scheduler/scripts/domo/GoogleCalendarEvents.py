@@ -68,13 +68,6 @@ baseurl='http://82.66.27.135/domocan/www/php/'
 
 ressource = init_calendar()
 
-def get_forecast():
-	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=auto&forecast_days=1'
-
-	res = requests.get(url)
-	data = res.json()
-	return data
-
 def Event_DailyControlShutter(ressource, forecast_daily):
 
 	# print(pytz.timezone('Europe/Paris'))
@@ -113,6 +106,14 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 		},
 	}
 	created_event = insert_event(ressource, param_body=eventShutter)
+
+def get_forecast():
+	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_hours,windspeed_10m_max&timezone=auto&forecast_days=1'
+
+	res = requests.get(url)
+	data = res.json()
+	return data
+
 from statistics import mean
 
 def Event_DailyControlPAC(ressource, forecast):
@@ -137,10 +138,18 @@ def Event_DailyControlPAC(ressource, forecast):
 		'end': {
 			'dateTime':  timesunsetTimeEnd.strftime('%Y-%m-%dT%H:%M:%S%z'), # +60mn
 		},
-		'description': 'mean_cloud: '+str(mean_cloud)+'\nmean_cloud_low under 3km: '+str(mean_cloud_low)\
-		+'\nmean_cloud_mid 3 to 8km: '+str(mean_cloud_mid)+'\nmean_cloud_high over 8km: '+str(mean_cloud_high)\
-		+'\nmean_temp2m: '+str(mean_temp2m)+'\nmean_apparenttemp: '+str(mean_apparenttemp),
-	}
+		'description': \
+		'time start: '+str(forecast['hourly']['time'][index_start]) \
+		+'\napparent_temperature_max: '+str(forecast['daily']['apparent_temperature_max']) \
+		+'\napparent_temperature_min: '+str(forecast['daily']['apparent_temperature_min']) \
+		+'\nmean_temp2m: '+str(mean_temp2m)+'\nmean_apparenttemp: '+str(mean_apparenttemp)
+		+'\nprecipitation_sum: '+str(forecast['daily']['precipitation_sum']) \
+		+'\nprecipitation_hours: '+str(forecast['daily']['precipitation_hours']) \
+		+'\nwindspeed_10m_max: '+str(forecast['daily']['windspeed_10m_max']) \
+		+'\nmean_cloud: '+str(mean_cloud)+'\nmean_cloud_low under 3km: '+str(mean_cloud_low) \
+		+'\nmean_cloud_mid 3 to 8km: '+str(mean_cloud_mid)+'\nmean_cloud_high over 8km: '+str(mean_cloud_high) \
+		,
+	} 
 	created_event = insert_event(ressource, param_body=eventShutter)
 
 	return
@@ -421,8 +430,8 @@ def callable_func():
 	print( "-------------end------------")
 
 if __name__ == '__main__':
-	forecast = get_forecast()
-	Event_DailyControlPAC(ressource,forecast)
+	# forecast = get_forecast()
+	# Event_DailyControlPAC(ressource,forecast)
 	if len(sys.argv)>1:
 		scheduler = sys.argv[1]
 	else:
