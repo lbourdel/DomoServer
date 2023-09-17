@@ -75,7 +75,7 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 
 	timesunriseTime=datetime.fromtimestamp(  by_day['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
 	timesunriseTimeEnd = timesunriseTime + timedelta(hours=1)
-	timesunsetTime=datetime.fromtimestamp(  by_day['sunset'][1], tz=pytz.timezone('Europe/Paris')) + timedelta(min=30)
+	timesunsetTime=datetime.fromtimestamp(  by_day['sunset'][1], tz=pytz.timezone('Europe/Paris')) + timedelta(minutes=30)
 	timesunsetTimeEnd = timesunsetTime + timedelta(hours=1)
 
 # !!!Pour ouverture volet roulant!!!
@@ -108,7 +108,7 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 	created_event = insert_event(ressource, param_body=eventShutter)
 
 def get_forecast():
-	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_hours,windspeed_10m_max&timezone=auto&forecast_days=1'
+	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_hours,windspeed_10m_max&timezone=auto&timeformat=unixtime&forecast_days=2'
 
 	res = requests.get(url)
 	data = res.json()
@@ -117,37 +117,64 @@ def get_forecast():
 from statistics import mean
 
 def Event_DailyControlPAC(ressource, forecast):
-	index_start =  9 # only daylight values
-	index_end =  18 # only daylight values
-	mean_cloud = int(mean(forecast['hourly']['cloudcover'][index_start:index_end]))
-	mean_cloud_low = int(mean(forecast['hourly']['cloudcover_low'][index_start:index_end]))
-	mean_cloud_mid = int(mean(forecast['hourly']['cloudcover_mid'][index_start:index_end]))
-	mean_cloud_high = int(mean(forecast['hourly']['cloudcover_high'][index_start:index_end]))
-	mean_temp2m = int(mean(forecast['hourly']['temperature_2m']))
-	mean_apparenttemp = int(mean(forecast['hourly']['apparent_temperature']))
+	sunrise_timestamp = forecast['daily']['sunrise'][1]
+	for index_sunrise in range(0,47):
+		if(sunrise_timestamp < forecast['hourly']['time'][index_sunrise]):
+			break
+	sunset_timestamp = forecast['daily']['sunset'][1]
+	for index_sunset in range(0,47):
+		if(sunset_timestamp < forecast['hourly']['time'][index_sunset]):
+			break
 
-	timesunsetTime=datetime.now( tz=pytz.timezone('Europe/Paris'))
-	timesunsetTimeEnd = timesunsetTime + timedelta(hours=1)
+	mean_cloud = int(mean(forecast['hourly']['cloudcover'][index_sunrise:index_sunset]))
+	mean_cloud_low = int(mean(forecast['hourly']['cloudcover_low'][index_sunrise:index_sunset]))
+	mean_cloud_mid = int(mean(forecast['hourly']['cloudcover_mid'][index_sunrise:index_sunset]))
+	mean_cloud_high = int(mean(forecast['hourly']['cloudcover_high'][index_sunrise:index_sunset]))
+	mean_temp2m = int(mean(forecast['hourly']['temperature_2m'][24:47])) # mean J+1
+	mean_apparenttemp = int(mean(forecast['hourly']['apparent_temperature'][24:47]))  # mean J+1
+
+	timesunriseTime =datetime.fromtimestamp(  forecast['hourly']['time'][index_sunrise], tz=pytz.timezone('Europe/Paris'))
+	timesunsetTimeEnd = timesunriseTime + timedelta(hours=1)
+	timesunsetTime =datetime.fromtimestamp(  forecast['hourly']['time'][index_sunset], tz=pytz.timezone('Europe/Paris'))
+
+
+	# Compute time to heat
+	heatTimeMinutes = (60) # min 1H for test
+	if mean_apparenttemp < 18:
+		heatTimeMinutes = (18 - mean_apparenttemp)*20 # 20mn par degre
+		if heatTimeMinutes < (120):
+			heatTimeMinutes = (120) # min 2H to heat
+	
+
+	today_start_on_night= datetime.now().strftime('%Y-%m-%dT')+'22:00:00'+pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+	start_time_timestamp =  time.mktime(datetime.strptime(today_start_on_night, "%Y-%m-%dT%H:%M:%S%z").timetuple())
+	today_end_on_night = datetime.fromtimestamp(  start_time_timestamp , tz=pytz.timezone('Europe/Paris'))
+	today_end_on_night += timedelta(minutes=heatTimeMinutes)
+
 
 	eventShutter = {
 		'summary': 'WakePAC',
 		'location': 'Cesson-Sevigne, France',
 		'start': {
-			'dateTime': timesunsetTime.strftime('%Y-%m-%dT%H:%M:%S%z'), 
+			'dateTime': today_start_on_night, 
 		},
 		'end': {
-			'dateTime':  timesunsetTimeEnd.strftime('%Y-%m-%dT%H:%M:%S%z'), # +60mn
+			'dateTime':  today_end_on_night.strftime('%Y-%m-%dT%H:%M:%S%z'), # +60mn
 		},
 		'description': \
-		'time start: '+str(forecast['hourly']['time'][index_start]) \
-		+'\napparent_temperature_max: '+str(forecast['daily']['apparent_temperature_max']) \
-		+'\napparent_temperature_min: '+str(forecast['daily']['apparent_temperature_min']) \
-		+'\nmean_temp2m: '+str(mean_temp2m)+'\nmean_apparenttemp: '+str(mean_apparenttemp)
-		+'\nprecipitation_sum: '+str(forecast['daily']['precipitation_sum']) \
-		+'\nprecipitation_hours: '+str(forecast['daily']['precipitation_hours']) \
-		+'\nwindspeed_10m_max: '+str(forecast['daily']['windspeed_10m_max']) \
+		'time start: '+timesunriseTime.strftime('%Y-%m-%dT%H:%M:%S%z') \
 		+'\nmean_cloud: '+str(mean_cloud)+'\nmean_cloud_low under 3km: '+str(mean_cloud_low) \
 		+'\nmean_cloud_mid 3 to 8km: '+str(mean_cloud_mid)+'\nmean_cloud_high over 8km: '+str(mean_cloud_high) \
+		+'\ntime end: '+timesunsetTime.strftime('%Y-%m-%dT%H:%M:%S%z') \
+		+'\nheatTimeMinutes: '+str(heatTimeMinutes) \
+		+'\n\ntemperature_min: '+str(forecast['daily']['temperature_2m_min'][1]) \
+		+'\ntemperature_max: '+str(forecast['daily']['temperature_2m_max'][1]) \
+		+'\napparent_temperature_min: '+str(forecast['daily']['apparent_temperature_min'][1]) \
+		+'\napparent_temperature_max: '+str(forecast['daily']['apparent_temperature_max'][1]) \
+		+'\nmean_temp2m: '+str(mean_temp2m)+'\nmean_apparenttemp: '+str(mean_apparenttemp)
+		+'\nprecipitation_sum: '+str(forecast['daily']['precipitation_sum'][1]) \
+		+'\nprecipitation_hours: '+str(forecast['daily']['precipitation_hours'][1]) \
+		+'\nwindspeed_10m_max: '+str(forecast['daily']['windspeed_10m_max'][1]) \
 		,
 	} 
 	created_event = insert_event(ressource, param_body=eventShutter)
@@ -399,7 +426,7 @@ def Event_Calendar(ressource):
 			# What the weather like ?
 			forecast = get_forecast()
 			Event_DailyControlShutter(ressource, forecast['daily'] )
-			Event_DailyControlPAC(ressource, forecast['daily'])
+			Event_DailyControlPAC(ressource, forecast)
 			delete_event(ressource, param_eventId=event['id'])
 			if event_tempo:
 				delete_event(ressource, param_eventId=event_tempo) # On peut supprimer l'event TEMPO du jour
