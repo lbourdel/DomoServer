@@ -298,6 +298,12 @@ def Event_CloseShutter():
 def SetPACState(PACStateToSet):
 	return
 
+def SetSmartEVSE(state):
+	url="http://192.168.1.102/settings?mode="+str(state) # VR haut cuisine
+	http_post(url)
+	return
+
+
 TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
 
 def addTempoEventCalendar(couleur, jours):
@@ -311,7 +317,7 @@ def addTempoEventCalendar(couleur, jours):
 	# sendToWhatApp('Demain jour ' + couleur['couleurJourJ1'])
 
 	startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
-	endTempo= (datetime.now() + timedelta(days=1, hours=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
+	endTempo= (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'07:00:00'+TZ_OFFSET
 	# .replace(tzinfo=pytz.timezone('UTC'))
 	print(endTempo)
 	eventShutter = {
@@ -406,6 +412,7 @@ def Event_Calendar(ressource):
 # returns a list of item objects (events).
 	events_found = get_events(ressource, timeMin, timeMax)
 	PACStateToSet=0
+	ChargeEV=0
 	for event in events_found:
 		print( "!!!MATCH!!!   Title query=%s"%event['summary'])
 		print( "Debut : ",event['start'])
@@ -434,6 +441,10 @@ def Event_Calendar(ressource):
 
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
+		if( event['summary']=='SmartEVSEmodeSmart'):
+			ChargeEV=3 # Smart
+			Event_WakePAC(event, ressource)
+
 		if( event['summary']=='WakePAC'):
 			PACStateToSet=1
 			Event_WakePAC(event, ressource)
@@ -447,6 +458,7 @@ def Event_Calendar(ressource):
 			delete_event(ressource, param_eventId=event['id'])
 
 	SetPACState(PACStateToSet)
+	SetSmartEVSE(ChargeEV)
 
 def callable_func():
 	#os.system("clear") #this is more for my benefit and is in no way necesarry
