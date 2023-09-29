@@ -55,7 +55,7 @@ def init_calendar():
 	service = build('calendar', 'v3', credentials=creds)
 	return service
 
-def get_events(param_service, start_date, end_date=0):
+def get_events(param_service, start_date, end_date=0, text_search = ""):
 
 	# Call the Calendar API
 	if end_date==0:
@@ -75,9 +75,38 @@ def get_events(param_service, start_date, end_date=0):
 
 	param_events = events_result.get('items', [])
 
+	if text_search:
+# using list comprehension to remove duplicated from list
+		res = []
+		[res.append(x) for x in param_events if text_search in x['summary']]
+		param_events = res
+		
 	if not param_events:
 		print('No upcoming events found.')
 	return param_events
+
+def search_delete(param_service, text_search, start_date=0):
+
+	# Call the Calendar API
+	start_date = (datetime.datetime.utcnow()-datetime.timedelta(hours=24)).isoformat() + 'Z' # 'Z' indicates UTC time
+	print('Getting the upcoming 10 events')
+	events_result = param_service.events().list(calendarId=mycalendarId,
+											timeMin=start_date,
+											maxResults=10,
+											singleEvents=True,
+											orderBy='startTime').execute()
+
+	param_events = events_result.get('items', [])
+
+# using list comprehension to remove duplicated from list
+	res = []
+	[res.append(x) for x in param_events if text_search  in x['summary']]
+
+	if not res:
+		print('No upcoming events found.')
+	else:
+		[delete_event(param_service, x['id']) for x in res ]
+
 
 def update_event(param_service, param_eventId, param_event):
 
@@ -101,10 +130,11 @@ def main():
 	"""
 	creds = init_calendar()
 
-	date_min = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-	date_max = (datetime.datetime.utcnow()+datetime.timedelta(hours=12)).isoformat() + 'Z' # 'Z' indicates UTC time
+	date_min = (datetime.datetime.utcnow()-datetime.timedelta(hours=10*24)).isoformat() + 'Z' # 'Z' indicates UTC time
+	date_max = (datetime.datetime.utcnow()).isoformat() + 'Z' # 'Z' indicates UTC time
 
-	events = get_events(creds, date_min, date_max)
+	search_delete(creds, "TEMPO_")
+	events = get_events(creds, date_min, date_max, "EVSE")
 
 	for event in events:
 		start = event['start'].get('dateTime', event['start'].get('date'))

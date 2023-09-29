@@ -60,7 +60,7 @@ if platform.system()=='Linux':
 else:
 	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../calendar/')
 
-from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
+from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event, search_delete
 from apscheduler.schedulers.background import BackgroundScheduler  #this will let us check the calender on a regular interval
 
 
@@ -426,6 +426,7 @@ def Event_Calendar(ressource):
 			event_tempo=event['id']
 			
 		if( event['summary']=='DailyTempo'):
+			search_delete(ressource, "TEMPO_")
 			Event_TempoControl()
 			delete_event(ressource, param_eventId=event['id'])
 
