@@ -7,8 +7,8 @@ import paho.mqtt.client as mqtt
 
 sys.path.append( "/var/www/domocan/scheduler/scripts/calendar" )
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event
-from feed.date.rfc3339 import timestamp_from_tf
-from feed.date.rfc3339 import tf_from_timestamp #also for the comparator
+# from feed.date.rfc3339 import timestamp_from_tf
+# from feed.date.rfc3339 import tf_from_timestamp #also for the comparator
 import pytz
 
 import getopt

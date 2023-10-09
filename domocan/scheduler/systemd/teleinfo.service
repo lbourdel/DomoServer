@@ -3,6 +3,8 @@ Description=A script to run mqtt server
 After=syslog.target network.target
 
 [Service]
+User=pi
+Group=pi
 WorkingDirectory=/var/www/domocan/scheduler/scripts/teleinfo
 ExecStart=/usr/bin/python3 /var/www/domocan/scheduler/scripts/teleinfo/teleinfo.py
 
