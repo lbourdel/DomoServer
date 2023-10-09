@@ -73,7 +73,12 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 	# print(pytz.timezone('Europe/Paris'))
 	by_day = forecast_daily	
 
-	timesunriseTime=datetime.fromtimestamp(  by_day['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
+	start_time= datetime.now().strftime('%Y-%m-%dT')+'07:30:00'+pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+	start_time_timestamp =  time.mktime(datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S%z").timetuple())
+	timesunriseTime = datetime.fromtimestamp(  start_time_timestamp , tz=pytz.timezone('Europe/Paris'))
+	timesunriseTime += timedelta(days=1)
+
+	# timesunriseTime=datetime.fromtimestamp(  by_day['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
 	timesunriseTimeEnd = timesunriseTime + timedelta(hours=1)
 	timesunsetTime=datetime.fromtimestamp(  by_day['sunset'][1], tz=pytz.timezone('Europe/Paris')) + timedelta(minutes=30)
 	timesunsetTimeEnd = timesunsetTime + timedelta(hours=1)
@@ -471,7 +476,7 @@ def callable_func():
 
 if __name__ == '__main__':
 	# forecast = get_forecast()
-	# Event_DailyControlPAC(ressource,forecast)
+	# Event_DailyControlShutter(ressource,forecast['daily'])
 	if len(sys.argv)>1:
 		scheduler = sys.argv[1]
 	else:
