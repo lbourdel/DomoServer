@@ -61,6 +61,11 @@ else:
 	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../calendar/')
 
 from gcalendar import init_calendar, get_events, update_event, insert_event, delete_event, search_delete
+if platform.system()=='Linux':
+	sys.path.append('/var/www/domocan/scheduler/scripts/tuya/')
+else:
+	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../tuya/')
+from tuya import TuyaRelay
 from apscheduler.schedulers.background import BackgroundScheduler  #this will let us check the calender on a regular interval
 
 
@@ -322,7 +327,7 @@ def addTempoEventCalendar(couleur, jours):
 	# sendToWhatApp('Demain jour ' + couleur['couleurJourJ1'])
 
 	startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
-	endTempo= (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'07:00:00'+TZ_OFFSET
+	endTempo= (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'22:00:00'+TZ_OFFSET
 	# .replace(tzinfo=pytz.timezone('UTC'))
 	print(endTempo)
 	eventShutter = {
@@ -424,10 +429,12 @@ def Event_Calendar(ressource):
 		print( "Fin : ",event['end'])
 
 		if( 'TEMPO_' in event['summary']):
-			if( 'ROUGE' in event['summary']):
+			if( 'ROUGE' or 'BLANC' in event['summary']):
 				HP_Rouge_Chauffage_Interdit = True
 			else:
 				HP_Rouge_Chauffage_Interdit = False
+			session = TuyaRelay()
+			session.setRelay(HP_Rouge_Chauffage_Interdit)
 			event_tempo=event['id']
 			
 		if( event['summary']=='DailyTempo'):
@@ -449,7 +456,9 @@ def Event_Calendar(ressource):
 # returns a list of item objects (events).
 		if( event['summary']=='SmartEVSEmodeSmart'):
 			ChargeEV=3 # Smart
-			Event_WakePAC(event, ressource)
+		if( event['summary']=='SmartEVSEmodeNormal'):
+			ChargeEV=1 # Smart
+			# Event_WakePAC(event, ressource)
 
 		if( event['summary']=='WakePAC'):
 			PACStateToSet=1

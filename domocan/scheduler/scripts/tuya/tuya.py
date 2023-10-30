@@ -72,30 +72,51 @@
 import tinytuya
 import time
 
-devices = tinytuya.deviceScan()
-for device in devices:
-    print(device)
-    print(devices[device])
+class TuyaRelay(object):
+    def __init__(self, ip_TuyaRelay='192.168.1.112'):
+        self.d = tinytuya.OutletDevice('00822444600194feee58'
+                                , ip_TuyaRelay
+                                , 'd37f3c1f34c28ca2'
+                                ,version=3.3)
+        self.d.set_socketPersistent(True)
+                                
+    def setRelay(self, state):
+        if state:
+            answ = self.d.turn_on(switch=4)
+            print("Switch ON", answ)
+        else:
+            answ = self.d.turn_off(switch=4)
+            print("Switch OFF", answ)
+            
+    def getStatus(self):
+        data = self.d.status() 
+        print('Device status: %r' % data)
+        
 
-time.sleep(5)
-
-d = tinytuya.OutletDevice('00822444600194feee58', '192.168.1.37', 'd37f3c1f34c28ca2')
-d.set_version(3.3)
-data = d.status() 
 
 
-print('Device status: %r' % data)
+if __name__ == '__main__':
 
-d.turn_on(switch=4)
+    session = TuyaRelay()
+    time.sleep(5)
 
-time.sleep(5)
+    print("GetStatus")
+    session.getStatus()
+    
+    time.sleep(5)
 
-data = d.status() 
-print('Device status: %r' % data)
+    session.setRelay(True)
+    print("SetRelay TRUE")
 
+    exit(0)
 
-d.turn_off(switch=4)
-time.sleep(5)
-data = d.status() 
-print('Device status: %r' % data)
+    # devices = tinytuya.deviceScan()
+    # for device in devices:
+        # print(device)
+        # print(devices[device])
+        # if '60:01:94:fe:ee:58' in devices[device]['mac']:
+            # ip_TuyaRelay = device
+            # print(ip_TuyaRelay)
+        
+
 

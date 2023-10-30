@@ -101,16 +101,16 @@ def checksum(chaine):
 		return False
 
 
-def sendToWhatApp(text):
-	return False # Service down payment needed after trial
-	text = text.replace(" ","+")
-	baseURL = 'https://api.callmebot.com/whatsapp.php?phone=33609863994&text='+text+'&apikey=3011836'
-	req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
-	# print(baseURL)
-	f = urllib.request.urlopen(req )
-	html = f.read()
-	# print(html) 
-	f.close()
+# def sendToWhatApp(text):
+	# return False # Service down payment needed after trial
+	# text = text.replace(" ","+")
+	# baseURL = 'https://api.callmebot.com/whatsapp.php?phone=33609863994&text='+text+'&apikey=3011836'
+	# req = urllib.request.Request(baseURL, headers={'User-Agent': 'Mozilla/5.0'})
+	print(baseURL)
+	# f = urllib.request.urlopen(req )
+	# html = f.read()
+	print(html) 
+	# f.close()
 
 
 def mqtt_publish(topic, payload):
@@ -240,19 +240,19 @@ while True:
 							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HC + 'old:' + compteur_JBleu_HC_old)
 							compteur_JBleu_HC_Old = compteur_JBleu_HC
 						if( "HPJB" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HP + ' old:' + compteur_JBleu_HP_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HP + ' old:' + compteur_JBleu_HP_old)
 							compteur_JBleu_HP_old = compteur_JBleu_HP
 						if( "HCJW" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBlanc_HC + ' old:' + compteur_JBlanc_HC_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBlanc_HC + ' old:' + compteur_JBlanc_HC_old)
 							compteur_JBlanc_HC_old = compteur_JBlanc_HC
 						if( "HPJW" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBlanc_HP + ' old:' + compteur_JBlanc_HP_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBlanc_HP + ' old:' + compteur_JBlanc_HP_old)
 							compteur_JBlanc_HP_old = compteur_JBlanc_HP
 						if( "HCJR" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JRouge_HC + ' old:' + compteur_JRouge_HC_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JRouge_HC + ' old:' + compteur_JRouge_HC_old)
 							compteur_JRouge_HC_old = compteur_JRouge_HC
 						if( "HPJR" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JRouge_HP + ' old:' + compteur_JRouge_HP_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JRouge_HP + ' old:' + compteur_JRouge_HP_old)
 							compteur_JRouge_HP_old = compteur_JRouge_HP
 						
 				if stri.startswith("BBRHCJB"):
@@ -283,8 +283,8 @@ while True:
 					if( tarif_tempo != striList[1]):
 						tarif_tempo = striList[1]
 						msg = 'Couleur '+ striList[0] + '= ' + striList[1]
-						if not '----' in striList[1]:
-							sendToWhatApp(msg)
+						# if not '----' in striList[1]:
+							# sendToWhatApp(msg)
 						# if 'ROUG' in striList[1]:
 							# addTempoEventCalendar(striList[1])
 						# if 'BLAN' in striList[1]:
@@ -295,7 +295,7 @@ while True:
 					courantI = striList[1]
 					msg = 'OVER CURRENT '+striList[0] + '=' +striList[1] 
 					mqtt_publish('linky/IAlert', payload=striList[1])
-					sendToWhatApp(msg)
+					# sendToWhatApp(msg)
 
 				if stri.startswith("IINST"):
 					# print(striList[ : -1])
