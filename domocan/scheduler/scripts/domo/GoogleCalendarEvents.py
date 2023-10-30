@@ -406,8 +406,7 @@ def Event_TempoControl():
 def Event_Calendar(ressource):
 #We add TZ_OFFSET in timeMin/timeMax
 	wake_interval=8
-	global event_tempo
-	event_tempo=''
+	HP_Rouge_Chauffage_Interdit = False
 
 	timeMin=(datetime.now()+ timedelta(minutes=-(wake_interval/2))).isoformat()+TZ_OFFSET
 	timeMax=(datetime.now()+ timedelta(minutes=+(wake_interval/2)+1)).isoformat()+TZ_OFFSET
@@ -428,14 +427,10 @@ def Event_Calendar(ressource):
 		print( "Debut : ",event['start'])
 		print( "Fin : ",event['end'])
 
+		HP_Rouge_Chauffage_Interdit = False
 		if( 'TEMPO_' in event['summary']):
 			if( 'ROUGE' or 'BLANC' in event['summary']):
 				HP_Rouge_Chauffage_Interdit = True
-			else:
-				HP_Rouge_Chauffage_Interdit = False
-			session = TuyaRelay()
-			session.setRelay(HP_Rouge_Chauffage_Interdit)
-			event_tempo=event['id']
 			
 		if( event['summary']=='DailyTempo'):
 			search_delete(ressource, "TEMPO_")
@@ -448,8 +443,6 @@ def Event_Calendar(ressource):
 			Event_DailyControlShutter(ressource, forecast['daily'] )
 			Event_DailyControlPAC(ressource, forecast)
 			delete_event(ressource, param_eventId=event['id'])
-			if event_tempo:
-				delete_event(ressource, param_eventId=event_tempo) # On peut supprimer l'event TEMPO du jour
 			#update_profil_CamRue()
 
 # Accessing the response like a dict object with an 'items' key
@@ -472,6 +465,8 @@ def Event_Calendar(ressource):
 			Event_CloseShutter()
 			delete_event(ressource, param_eventId=event['id'])
 
+	session = TuyaRelay()
+	session.setRelay(HP_Rouge_Chauffage_Interdit)
 	SetPACState(PACStateToSet)
 	SetSmartEVSE(ChargeEV)
 

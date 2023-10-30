@@ -88,10 +88,12 @@ def get_events(param_service, start_date, end_date=0, text_search = ""):
 def search_delete(param_service, text_search, start_date=0):
 
 	# Call the Calendar API
-	start_date = (datetime.datetime.utcnow()-datetime.timedelta(hours=24)).isoformat() + 'Z' # 'Z' indicates UTC time
+	start_date = (datetime.datetime.utcnow()-datetime.timedelta(hours=48)).isoformat() + 'Z' # 'Z' indicates UTC time
+	end_date = (datetime.datetime.utcnow()-datetime.timedelta(hours=24)).isoformat() + 'Z' # 'Z' indicates UTC time
 	print('Getting the upcoming 10 events')
 	events_result = param_service.events().list(calendarId=mycalendarId,
 											timeMin=start_date,
+											timeMax=end_date,
 											maxResults=10,
 											singleEvents=True,
 											orderBy='startTime').execute()
