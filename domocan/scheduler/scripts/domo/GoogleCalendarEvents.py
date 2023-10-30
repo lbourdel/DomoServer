@@ -429,7 +429,7 @@ def Event_Calendar(ressource):
 
 		HP_Rouge_Chauffage_Interdit = False
 		if( 'TEMPO_' in event['summary']):
-			if( 'ROUGE' or 'BLANC' in event['summary']):
+			if( ('ROUGE' or 'BLANC') in event['summary']):
 				HP_Rouge_Chauffage_Interdit = True
 			
 		if( event['summary']=='DailyTempo'):
