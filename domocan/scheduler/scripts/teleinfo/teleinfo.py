@@ -237,7 +237,7 @@ while True:
 						# msg = 'Periode Tarifaire '+ striList[0] + '= ' + striList[1] + ' at ' + str(datetime.now())
 						# sendToWhatApp(msg)
 						if( "HCJB" in striList[1]):
-							sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HC + 'old:' + compteur_JBleu_HC_old)
+							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HC + 'old:' + compteur_JBleu_HC_old)
 							compteur_JBleu_HC_Old = compteur_JBleu_HC
 						if( "HPJB" in striList[1]):
 							# sendToWhatApp('Chgt Periode Conso '+ striList[1] + '= ' + compteur_JBleu_HP + ' old:' + compteur_JBleu_HP_old)

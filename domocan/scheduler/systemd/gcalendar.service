@@ -3,6 +3,8 @@
 #  After=multi-user.target
 
 [Service]
+User=pi
+Group=pi
 #  Type=oneshot
   Type=simple
 #  RemainAfterExit=yes

@@ -147,23 +147,26 @@ def Event_DailyControlPAC(ressource, forecast):
 	timesunsetTimeEnd = timesunriseTime + timedelta(hours=1)
 	timesunsetTime =datetime.fromtimestamp(  forecast['hourly']['time'][index_sunset], tz=pytz.timezone('Europe/Paris'))
 
-
+	precipitation_sum = forecast['daily']['precipitation_sum'][1]
 	# Compute time to heat
-	heatTimeMinutes = (60) # min 1H for test
+	heatTimeMinutes = (60) # min 1H for calendar
 	if mean_apparenttemp < 18:
 		heatTimeMinutes = (18 - mean_apparenttemp)*20 # 20mn par degre
+		heatTimeMinutes += (precipitation_sum*20) # 20mn par mm
+		heatTimeMinutes += (mean_cloud)
 		if heatTimeMinutes < (120):
 			heatTimeMinutes = (120) # min 2H to heat
-	
+	print("heatTimeMinutes=",heatTimeMinutes)
+	# Limit to not overpass low rate hour
+	if heatTimeMinutes> (465): # 8h*60mn-15min
+		heatTimeMinutes = 465
 
 	today_start_on_night= datetime.now().strftime('%Y-%m-%dT')+'22:00:00'+pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
 	start_time_timestamp =  time.mktime(datetime.strptime(today_start_on_night, "%Y-%m-%dT%H:%M:%S%z").timetuple())
 	today_end_on_night = datetime.fromtimestamp(  start_time_timestamp , tz=pytz.timezone('Europe/Paris'))
 	today_end_on_night += timedelta(minutes=heatTimeMinutes)
 
-
-	eventShutter = {
-		'summary': 'WakePAC',
+	eventPAC = {
 		'location': 'Cesson-Sevigne, France',
 		'start': {
 			'dateTime': today_start_on_night, 
@@ -187,12 +190,20 @@ def Event_DailyControlPAC(ressource, forecast):
 		+'\nwindspeed_10m_max: '+str(forecast['daily']['windspeed_10m_max'][1]) \
 		,
 	} 
-	created_event = insert_event(ressource, param_body=eventShutter)
+
+	if (mean_apparenttemp<18) and (mean_cloud>50):
+		eventPAC['summary']='WakePAC'
+		eventPAC['colorId']='11' # Rouge
+	else:
+		eventPAC['summary']='NoWakePAC'
+		eventPAC['colorId']='2' # Vert
+
+	created_event = insert_event(ressource, param_body=eventPAC)
 
 	return
 
 def Event_WakePAC(event, ressource):
-	print( 'ALLUMAGE CHAUFFAGE DONE')
+	# print( 'ALLUMAGE CHAUFFAGE DONE')
 
 	if(event.get('description')):
 		event['description']=event['description']+' \nPAC Started'
@@ -306,6 +317,13 @@ def Event_CloseShutter():
 	return
 
 def SetPACState(PACStateToSet):
+	if PACStateToSet:
+		url=baseurl+'CmdPAC.php?state=1'  # PAC ON
+	else:
+		url=baseurl+'CmdPAC.php?state=0'  # PAC OFF
+
+	http_post(url)
+
 	return
 
 def SetSmartEVSE(state):
@@ -357,7 +375,6 @@ def addTempoEventCalendar(couleur, jours):
 	print(  created_event   )
 
 def GetJourTempo():
-# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
 	url='https://particulier.edf.fr/services/rest/referentiel/getNbTempoDays?TypeAlerte=TEMPO'
 	try:
 		# print( url)
@@ -378,7 +395,6 @@ def GetJourTempo():
 		return result
 
 def GetCouleurTempo(date):
-# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
 	url='https://particulier.edf.fr/services/rest/referentiel/searchTempoStore?dateRelevant=' + date
 	try:
 		# print( url)
@@ -451,11 +467,10 @@ def Event_Calendar(ressource):
 			ChargeEV=3 # Smart
 		if( event['summary']=='SmartEVSEmodeNormal'):
 			ChargeEV=1 # Smart
-			# Event_WakePAC(event, ressource)
 
 		if( event['summary']=='WakePAC'):
 			PACStateToSet=1
-			Event_WakePAC(event, ressource)
+			# Event_WakePAC(event, ressource)
 
 		if( event['summary']=='OpenShutter'):
 			Event_OpenShutter()
