@@ -66,6 +66,11 @@ if platform.system()=='Linux':
 else:
 	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../tuya/')
 from tuya import TuyaRelay
+if platform.system()=='Linux':
+	sys.path.append('/var/www/domocan/scheduler/scripts/free/')
+else:
+	sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../free/')
+from FreeCamRueSchedule import update_profil_CamRue
 from apscheduler.schedulers.background import BackgroundScheduler  #this will let us check the calender on a regular interval
 
 
@@ -449,6 +454,7 @@ def Event_Calendar(ressource):
 				HP_Rouge_Chauffage_Interdit = True
 			
 		if( event['summary']=='DailyTempo'):
+			update_profil_CamRue()
 			search_delete(ressource, "TEMPO_")
 			Event_TempoControl()
 			delete_event(ressource, param_eventId=event['id'])

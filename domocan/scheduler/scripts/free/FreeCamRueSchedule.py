@@ -17,6 +17,7 @@ from astral.sun import sun
 import pytz
 utc=pytz.UTC
 city = LocationInfo("Paris", "France","Europe/Paris",48.0982983,-1.6051953)
+print(city.timezone)
 s = sun(city.observer, date=datetime.date.today(), tzinfo=city.timezone)
 print((
     f'Dawn:    {s["dawn"]}\n'
@@ -27,8 +28,9 @@ print((
 ))
 
 sunrise = (s["sunrise"]+datetime.timedelta(minutes=30)).time()
-sunset = (s["sunset"]-datetime.timedelta(minutes=30)).time()
-
+dusk = (s["dusk"]-datetime.timedelta(minutes=30)).time()
+# print(s["sunrise"]+datetime.timedelta(minutes=30))
+# print((s["dusk"]-datetime.timedelta(minutes=30)).time())
 # tz = pytz.timezone(city.timezone)
 # time_now = datetime.datetime.now(tz)
 
@@ -38,7 +40,7 @@ sunset = (s["sunset"]-datetime.timedelta(minutes=30)).time()
 # 	print("Switch on light")
 
 def connexion_post(method,data=None,headers={}):
-	url = "http://mafreebox.freebox.fr/api/v8/"+method
+	url = "http://mafreebox.freebox.fr/api/v10/"+method
 	print("urlPOST=",url)
 	if data: data = json.dumps(data)
 	response = requests.post(url, data=data, headers=headers).text
@@ -51,7 +53,7 @@ def connexion_post(method,data=None,headers={}):
 	return resultat
 
 def connexion_put(method,data=None,headers={}):
-	url = "http://mafreebox.freebox.fr/api/v8/"+method
+	url = "http://mafreebox.freebox.fr/api/v10/"+method
 	print("urlPUT=",url)
 	if data: data = json.dumps(data) 
 	resultat = json.loads(requests.put(url, data=data, headers=headers).text)
@@ -63,7 +65,7 @@ def connexion_put(method,data=None,headers={}):
 	return resultat
 
 def connexion_get(method, headers={}):
-	url = "http://mafreebox.freebox.fr/api/v8/"+method 
+	url = "http://mafreebox.freebox.fr/api/v10/"+method 
 	print("urlGET=",url)
 	resultat = json.loads(requests.get(url, headers=headers).text)
 
@@ -145,12 +147,12 @@ def RuleControlCamera(profile_id,session_token):
 	method_put = "network_control/"+str(profile_id)+"/rules/"+str(data["id"])
 	data["enabled"]= True
 	# Round to 30mn
-	sunrise_in_s = datetime.timedelta(hours=sunrise.hour, minutes=(sunrise.minute//30)*30, seconds=0).total_seconds()
-	sunset_in_s = datetime.timedelta(hours=sunset.hour, minutes=(sunset.minute//30)*30, seconds=0).total_seconds()
+	sunrise_in_s = (datetime.timedelta(hours=sunrise.hour, minutes=(sunrise.minute//30)*30, seconds=0)).total_seconds()
+	dusk_in_s = (datetime.timedelta(hours=dusk.hour, minutes=(dusk.minute//30)*30, seconds=0)).total_seconds()
 
 	print(datetime.timedelta(seconds=sunrise_in_s))
-	print(datetime.timedelta(seconds=sunset_in_s))
-	data["start_time"]= int(sunset_in_s)
+	print(datetime.timedelta(seconds=dusk_in_s))
+	data["start_time"]= int(dusk_in_s)
 	data["end_time"]= int(sunrise_in_s)
 
 	res2 =  connexion_put(method_put, data, headers={"X-Fbx-App-Auth": session_token})
