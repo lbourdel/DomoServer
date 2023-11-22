@@ -235,7 +235,7 @@ def Event_OpenShutter():
 		url=baseurl+'CmdVR.php?carte=0x06&entree=0x0E&data0=0x26'  # Volet Salon
 		http_post(url)
 
-		time.sleep( 3 )
+		time.sleep( 7 )
 #       if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
 #        if(datetime.isoweekday(datetime.now())>10): # Never
 	if(datetime.isoweekday(datetime.now())>0): # Always
@@ -450,7 +450,7 @@ def Event_Calendar(ressource):
 
 		HP_Rouge_Chauffage_Interdit = False
 		if( 'TEMPO_' in event['summary']):
-			if( ('ROUGE' or 'BLANC') in event['summary']):
+			if('ROUGE' in event['summary']) or ('BLANC' in event['summary']):
 				HP_Rouge_Chauffage_Interdit = True
 			
 		if( event['summary']=='DailyTempo'):
