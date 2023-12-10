@@ -317,7 +317,7 @@ while True:
 					puissancePmean += int(puissanceP)
 
 					counterPAPP+=1
-					print( counterPAPP )
+					# print( counterPAPP )
 					mqtt_publish('linky/Papp', payload=(puissanceP))
 					if counterPAPP >= counterMax:
 						puissancePmean/=counterPAPP
@@ -337,7 +337,7 @@ while True:
 				# print(html) 
 				# f.close()
 				# response = channel.update({'field1': courantImean, 'field2': puissancePmean})
-				response = channel.update({'field1': courantImean})
+				response = channel.update({'field1': courantImean,'field2': puissancePmean})
 			except:
 				print('tata',response)
 

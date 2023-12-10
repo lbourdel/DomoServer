@@ -74,7 +74,7 @@ from FreeCamRueSchedule import update_profil_CamRue
 from apscheduler.schedulers.background import BackgroundScheduler  #this will let us check the calender on a regular interval
 
 
-baseurl='http://82.66.27.135/domocan/www/php/'
+baseurl='http://127.0.0.1/domocan/www/php/'
 
 ressource = init_calendar()
 
@@ -235,7 +235,7 @@ def Event_OpenShutter():
 		url=baseurl+'CmdVR.php?carte=0x06&entree=0x0E&data0=0x26'  # Volet Salon
 		http_post(url)
 
-		time.sleep( 7 )
+		time.sleep( 8 )
 #       if(datetime.isoweekday(datetime.now())<=5): # Only Monday to Friday
 #        if(datetime.isoweekday(datetime.now())>10): # Never
 	if(datetime.isoweekday(datetime.now())>0): # Always

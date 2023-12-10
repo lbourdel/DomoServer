@@ -16,28 +16,7 @@ from astral.sun import sun
 
 import pytz
 utc=pytz.UTC
-city = LocationInfo("Paris", "France","Europe/Paris",48.0982983,-1.6051953)
-print(city.timezone)
-s = sun(city.observer, date=datetime.date.today(), tzinfo=city.timezone)
-print((
-    f'Dawn:    {s["dawn"]}\n'
-    f'Sunrise: {s["sunrise"]}\n'
-    f'Noon:    {s["noon"]}\n'
-    f'Sunset:  {s["sunset"]}\n'
-    f'Dusk:    {s["dusk"]}\n'
-))
 
-sunrise = (s["sunrise"]+datetime.timedelta(minutes=30)).time()
-dusk = (s["dusk"]-datetime.timedelta(minutes=30)).time()
-# print(s["sunrise"]+datetime.timedelta(minutes=30))
-# print((s["dusk"]-datetime.timedelta(minutes=30)).time())
-# tz = pytz.timezone(city.timezone)
-# time_now = datetime.datetime.now(tz)
-
-# if time_now > sunrise and time_now < sunset: # am I in between sunset and dusk?
-# 	print("Daylight")
-# else:
-# 	print("Switch on light")
 
 def connexion_post(method,data=None,headers={}):
 	url = "http://mafreebox.freebox.fr/api/v10/"+method
@@ -49,7 +28,7 @@ def connexion_post(method,data=None,headers={}):
 	if resultat["success"] != True:
 		raise NameError('!!POST call FAILED !!')
 		print("Result KO")
-	print("resultatPOST=", resultat)
+	# print("resultatPOST=", resultat)
 	return resultat
 
 def connexion_put(method,data=None,headers={}):
@@ -61,7 +40,7 @@ def connexion_put(method,data=None,headers={}):
 	if resultat["success"] != True:
 		raise NameError('!!PUT call FAILED !!')
 		print("Result KO")
-	print("resultatPUT=", resultat)
+	# print("resultatPUT=", resultat)
 	return resultat
 
 def connexion_get(method, headers={}):
@@ -72,7 +51,7 @@ def connexion_get(method, headers={}):
 	if resultat["success"] != True:
 		raise NameError('!!GET call FAILED !!')
 		print("Result KO")
-	print("resultatGet=", resultat)
+	# print("resultatGet=", resultat)
 	return resultat
 	
 def mksession():
@@ -96,7 +75,7 @@ def mksession():
 		"app_id": "fr.freebox.python",
 		"password": hmac.new(app_token,challenge.encode('utf-8'),hashlib.sha1).hexdigest()
 	}
-	print('data=',data)
+	# print('data=',data)
 
 	# resultat = connexion_post("login/session/",data)["result"]["session_token"]
 	resultat = connexion_post("login/session/",data)
@@ -108,7 +87,7 @@ def SearchNetworkProfile(name, session_token):
 	method_get = "profile"
 	resultat =  connexion_get(method_get, headers={"X-Fbx-App-Auth": session_token})
 	data = resultat["result"]
-	print("SearchNetworkProfile=",resultat)
+	# print("SearchNetworkProfile=",resultat)
 
 	# Pensez a creer un profil Foscam
 	for val in resultat["result"]:
@@ -144,6 +123,28 @@ def RuleControlCamera(profile_id,session_token):
 	data = resultat["result"][0]
 	print("data=",data)
 
+	city = LocationInfo("Paris", "France","Europe/Paris",48.0982983,-1.6051953)
+	print(city.timezone)
+	s = sun(city.observer, date=datetime.date.today(), tzinfo=city.timezone)
+	print((
+		f'Dawn:    {s["dawn"]}\n'
+		f'Sunrise: {s["sunrise"]}\n'
+		f'Noon:    {s["noon"]}\n'
+		f'Sunset:  {s["sunset"]}\n'
+		f'Dusk:    {s["dusk"]}\n'
+	))
+
+	sunrise = (s["sunrise"]+datetime.timedelta(minutes=30)).time()
+	dusk = (s["dusk"]-datetime.timedelta(minutes=30)).time()
+	# print(s["sunrise"]+datetime.timedelta(minutes=30))
+	# print((s["dusk"]-datetime.timedelta(minutes=30)).time())
+	# tz = pytz.timezone(city.timezone)
+	# time_now = datetime.datetime.now(tz)
+
+	# if time_now > sunrise and time_now < sunset: # am I in between sunset and dusk?
+	# 	print("Daylight")
+	# else:
+	# 	print("Switch on light")
 	method_put = "network_control/"+str(profile_id)+"/rules/"+str(data["id"])
 	data["enabled"]= True
 	# Round to 30mn
