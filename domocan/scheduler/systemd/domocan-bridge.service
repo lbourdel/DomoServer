@@ -1,11 +1,11 @@
 [Unit]
   Description=Bridge between UDP 1470 port and Can0 network
-  After=multi-user.target
+  After=multi-user.target  network.target
 
 [Service]
   Type=oneshot
   RemainAfterExit=yes
-  ExecStartPre=/bin/sleep 120
+#  ExecStartPre=/bin/sleep 120
   ExecStart=/var/www/domocan/bin/domocan-bridgeV2 -b 192.168.1.255
   #ExecStop=nothing
   RestartSec=60

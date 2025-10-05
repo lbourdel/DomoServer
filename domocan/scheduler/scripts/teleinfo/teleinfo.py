@@ -123,6 +123,7 @@ def on_disconnect(client, userdata, rc):
     print("Unexpected disconnection  {rc}")
     if rc != 0:
         print("Unexpected disconnection.")
+    mqtt_client.connect("localhost", port=1883, keepalive=300)
 
 # Main program start here
 # ========================
@@ -220,7 +221,7 @@ while True:
 		print("Port COM busy : read")
 		exit()
 
-	# print(c);
+	print(c);
 	# compteur_JBleu_HC_Old = compteur_JBleu_HC
 	if c.decode('ascii')=='\n':
 		stri=''

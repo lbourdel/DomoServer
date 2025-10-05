@@ -83,7 +83,7 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 	# print(pytz.timezone('Europe/Paris'))
 	by_day = forecast_daily	
 
-	start_time= datetime.now().strftime('%Y-%m-%dT')+'07:30:00'+pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
+	start_time= datetime.now().strftime('%Y-%m-%dT')+'07:00:00'+pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
 	start_time_timestamp =  time.mktime(datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S%z").timetuple())
 	timesunriseTime = datetime.fromtimestamp(  start_time_timestamp , tz=pytz.timezone('Europe/Paris'))
 	timesunriseTime += timedelta(days=1)
@@ -122,19 +122,178 @@ def Event_DailyControlShutter(ressource, forecast_daily):
 	}
 	created_event = insert_event(ressource, param_body=eventShutter)
 
+def get_forecast_soldcast():
+	# url = "https://api.solcast.com.au/rooftop_sites/09ea-e387-a5a0-4327/forecasts?format=json&api_key=JVw9GH-MxcOHto74WOfmGcKhRTtTSuPl"
+	# res = requests.get(url, headers={"accept": "application/json"})
+	# data_soldcast = res.json()
+	# for forecas in data_soldcast['forecasts']:
+		# print("soldcast:",data_soldcast['forecasts'][forecas])
+
+	return data_soldcast
+	
+def get_forecast_solar():
+	# url = "https://api.forecast.solar/estimate/watthours/day/48.0985285/-1.6038443/30/180/4?time=utc"
+	# res = requests.get(url)
+	# data_forecast_solar = res.json()
+	# count=1
+	# if( 'Rate ' not in data_forecast_solar['result'] ):
+		# for date in data_forecast_solar['result']:
+			# if count > 1:
+				# break
+			# print("cumul by day :",date,": ",data_forecast_solar['result'][date], "Wh")
+			# date_api_forecast_solar = date
+			# cumul_Wh_day_api_forecast_solar = data_forecast_solar['result'][date]
+			# print('Solar Power for 4Kw panel ',date_api_forecast_solar,': ', cumul_Wh_day_api_forecast_solar)
+			# count += 1
+	# date_api_forecast_solar = "17/04"
+	# cumul_Wh_day_api_forecast_solar = "1000"
+	# info_cumul_Wh_day = date_api_forecast_solar+" forecast solar cumul day: "+cumul_Wh_day_api_forecast_solar+" Wh"
+
+	# url = "https://api.forecast.solar/estimate/watthours/48.098529/-1.603844/30/180/4?time=utc"
+	# res = requests.get(url, headers={"accept": "application/json"})
+	# data_forecast_solar = res.json()
+	# if( 'Rate ' not in data_forecast_solar['result'] ):
+		# print("forecast.solar:",data_forecast_solar['result'])	
+		# for date in data_forecast_solar['result']:
+			# print("cumul by hour:",date, data_forecast_solar['result'][date], "Wh")
+
+	# url = "https://api.forecast.solar/estimate/watts/48.0985285/-1.6038443/30/180/4?time=utc"
+	# res = requests.get(url)
+	# data_forecast_solar = res.json()
+	# print(data_forecast_solar['result'])
+	# if( 'Rate ' not in data_forecast_solar['result'] ):
+		# for date in data_forecast_solar['result']:
+			# print("watt_hours_period :",date,": ",data_forecast_solar['result'][date], "Watt")
+
+	url = "https://api.forecast.solar/estimate/48.0985285/-1.6038443/30/180/4"
+	res = requests.get(url)
+	data_forecast_solar = res.json()
+	# print("forecast.solar:",data_forecast_solar)
+	# for info in data_forecast_solar['result']:
+		# for date in info:
+			# print(date,": ",data_forecast_solar['result'][info][date])
+	
+	return data_forecast_solar
+	
 def get_forecast():
-	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_hours,windspeed_10m_max&timezone=auto&timeformat=unixtime&forecast_days=2'
+	url = 'https://api.open-meteo.com/v1/forecast?latitude=48.1212&longitude=-1.603&hourly=shortwave_radiation,direct_radiation,direct_normal_irradiance,diffuse_radiation,global_tilted_irradiance,temperature_2m,apparent_temperature,cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high&daily=sunshine_duration,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,precipitation_sum,precipitation_hours,windspeed_10m_max&timezone=auto&timeformat=unixtime&forecast_days=2&tilt=30'
 
 	res = requests.get(url)
-	data = res.json()
-	return data
+	data_open_meteo = res.json()
+	
+	return data_open_meteo
 
 from statistics import mean
 
-def Event_DailyControlPAC(ressource, forecast):
+def Event_DailyControlSolar(ressource, forecast):
 	sunrise_timestamp = forecast['daily']['sunrise'][1]
+	# timesunriseTime =datetime.fromtimestamp( forecast['daily']['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
+	# timesunsetTime =datetime.fromtimestamp( forecast['daily']['sunset'][1], tz=pytz.timezone('Europe/Paris'))
+	# print("timesunriseTime",timesunriseTime,"timesunsetTime",timesunsetTime)
 	for index_sunrise in range(0,47):
 		if(sunrise_timestamp < forecast['hourly']['time'][index_sunrise]):
+			index_sunrise+=1
+			break
+	sunset_timestamp = forecast['daily']['sunset'][1]
+	for index_sunset in range(0,47):
+		if(sunset_timestamp < forecast['hourly']['time'][index_sunset]):
+			break
+	# print("index_sunrise:", index_sunrise, "index_sunset:",index_sunset )
+	# print("shortwave_radiation:", forecast['hourly']['shortwave_radiation'][index_sunrise:index_sunset] )
+	# print("direct_radiation:", forecast['hourly']['direct_radiation'][index_sunrise:index_sunset] )
+	# print("direct_normal_irradiance:", forecast['hourly']['direct_normal_irradiance'][index_sunrise:index_sunset] )
+	# print("diffuse_radiation:", forecast['hourly']['diffuse_radiation'][index_sunrise:index_sunset] )
+	# print("global_tilted_irradiance:", forecast['hourly']['global_tilted_irradiance'][index_sunrise:index_sunset] )
+
+	sunshine_duration = int(forecast['daily']['sunshine_duration'][1])
+	shortwave_radiation_mean = int(mean(forecast['hourly']['shortwave_radiation'][index_sunrise:index_sunset]))
+	shortwave_radiation_sum = int(sum(forecast['hourly']['shortwave_radiation'][index_sunrise:index_sunset]))
+	direct_radiation_mean = int(mean(forecast['hourly']['direct_radiation'][index_sunrise:index_sunset]))
+	direct_radiation_sum = int(sum(forecast['hourly']['direct_radiation'][index_sunrise:index_sunset]))
+	direct_normal_irradiance_mean = int(mean(forecast['hourly']['direct_normal_irradiance'][index_sunrise:index_sunset]))
+	direct_normal_irradiance_sum = int(sum(forecast['hourly']['direct_normal_irradiance'][index_sunrise:index_sunset]))
+	diffuse_radiation_mean = int(mean(forecast['hourly']['diffuse_radiation'][index_sunrise:index_sunset]))
+	diffuse_radiation_sum = int(sum(forecast['hourly']['diffuse_radiation'][index_sunrise:index_sunset]))
+	global_tilted_irradiance_mean = int(mean(forecast['hourly']['global_tilted_irradiance'][index_sunrise:index_sunset]))
+	global_tilted_irradiance_sum = int(sum(forecast['hourly']['global_tilted_irradiance'][index_sunrise:index_sunset]))
+
+	timesunriseTime =datetime.fromtimestamp(  forecast['hourly']['time'][index_sunrise], tz=pytz.timezone('Europe/Paris'))
+	timesunsetTimeEnd = timesunriseTime + timedelta(hours=1)
+	timesunsetTime =datetime.fromtimestamp(  forecast['hourly']['time'][index_sunset], tz=pytz.timezone('Europe/Paris'))
+
+	data_estimates = get_forecast_solar()
+	# print(data_estimates)
+	dict_data_estimates = data_estimates['result']['watt_hours_day']
+	date_watt_hours_day = list(dict_data_estimates)[1]
+	# print(date_watt_hours_day)
+	watt_hours_day = dict_data_estimates[date_watt_hours_day]
+	# print(watt_hours_day)
+
+	startEvent=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'09:00:00'+TZ_OFFSET
+	endEvent= (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'10:00:00'+TZ_OFFSET
+
+	eventSolar = {
+		'summary': str(direct_normal_irradiance_sum)+' W/m2',
+		'location': 'Cesson-Sevigne, France',
+		'start': {
+			'dateTime': startEvent, 
+		},
+		'end': {
+			'dateTime':  endEvent
+		},
+		'description': \
+		'\ndirect_radiation mean W/m²: ' + str(direct_radiation_mean) \
+		# +'\nPuiss: ' + str(watt_hours_day) + 'W for day: ' + str(date_watt_hours_day) \
+		+'\ndirect_normal_irradiance mean W/m²: ' + str(direct_normal_irradiance_mean) \
+		+'\ndiffuse_radiation mean W/m²: ' + str(diffuse_radiation_mean) \
+		+'\nglobal_tilted_irradiance mean W/m²: ' + str(global_tilted_irradiance_mean) \
+		+'\ndirect_radiation sum W/m²: ' + str(direct_radiation_sum) \
+		+'\ndirect_normal_irradiance sum W/m²: ' + str(direct_normal_irradiance_sum) \
+		+'\ndiffuse_radiation sum W/m²: ' + str(diffuse_radiation_sum) \
+		+'\nglobal_tilted_irradiance sum W/m²: ' + str(global_tilted_irradiance_sum) \
+		+'\nsunshine_duration s: ' + str(sunshine_duration) \
+		,
+	} 
+    # "Lavender": 	1,
+    # "Sage": 		2,
+    # "Grape": 	    3,
+    # "Flamingo": 	4,
+    # "Banana": 		5,
+    # "Tangerine": 	6,
+    # "Peacock": 		7,
+    # "Graphite": 	8,
+    # "Blueberry": 	9,
+    # "Basil":        10,
+    # "Tomato": 		11
+	if ( direct_normal_irradiance_sum <1000 ):
+		eventSolar['colorId']=  '5' # Banana
+	elif ( direct_normal_irradiance_sum <2000 ):
+		eventSolar['colorId']= '6' # Tangerine
+	elif ( direct_normal_irradiance_sum <3000 ):
+		eventSolar['colorId']= '4' # Flamingo
+	elif ( direct_normal_irradiance_sum <4000 ):
+		eventSolar['colorId']= '1' # Lavender
+	else:
+		eventSolar['colorId']= '11' # Tomato
+
+	print(eventSolar)
+
+	created_event = insert_event(ressource, param_body=eventSolar)
+
+	hour_end_2k = int(max(2,(2000-(direct_normal_irradiance_sum))/10))
+	hour_end_1k = int(max(2,(4000-(direct_normal_irradiance_sum))/10))
+	SetSolarRouter(hour_end_2k, hour_end_1k)
+	
+	return
+
+def Event_DailyControlPAC(ressource, forecast):
+	sunrise_timestamp = forecast['daily']['sunrise'][1]
+	# timesunriseTime =datetime.fromtimestamp( forecast['daily']['sunrise'][1], tz=pytz.timezone('Europe/Paris'))
+	# timesunsetTime =datetime.fromtimestamp( forecast['daily']['sunset'][1], tz=pytz.timezone('Europe/Paris'))
+	# print("timesunriseTime",timesunriseTime,"timesunsetTime",timesunsetTime)
+	for index_sunrise in range(0,47):
+		if(sunrise_timestamp < forecast['hourly']['time'][index_sunrise]):
+			index_sunrise+=1
 			break
 	sunset_timestamp = forecast['daily']['sunset'][1]
 	for index_sunset in range(0,47):
@@ -171,6 +330,7 @@ def Event_DailyControlPAC(ressource, forecast):
 	today_end_on_night = datetime.fromtimestamp(  start_time_timestamp , tz=pytz.timezone('Europe/Paris'))
 	today_end_on_night += timedelta(minutes=heatTimeMinutes)
 
+
 	eventPAC = {
 		'location': 'Cesson-Sevigne, France',
 		'start': {
@@ -197,7 +357,7 @@ def Event_DailyControlPAC(ressource, forecast):
 	} 
 
 	if (mean_apparenttemp<18) and (mean_cloud>50):
-		eventPAC['summary']='WakePAC'
+		eventPAC['summary']='EndWakePAC'
 		eventPAC['colorId']='11' # Rouge
 	else:
 		eventPAC['summary']='NoWakePAC'
@@ -219,7 +379,7 @@ def Event_WakePAC(event, ressource):
 	return
 
 def http_post(url):
-	url_response = requests.post(url)
+	url_response = requests.post(url, timeout=30)
 	#    print url_response.info()
 	# html = url_response.ok
 	# do something
@@ -336,17 +496,36 @@ def SetSmartEVSE(state):
 	http_post(url)
 	return
 
+def SetSolarRouter(endECS_On_2K, endECS_On_1K):
+	url="http://192.168.1.125/ActionsUpdateAction?NumAction=1&periode=1&value="+str(endECS_On_2K).zfill(4) # heure fin chauffe heure nuit
+	http_post(url)
+	print(url)
+	
+	time.sleep( 3 )
+
+	url="http://192.168.1.125/ActionsUpdateAction?NumAction=2&periode=1&value="+str(endECS_On_1K).zfill(4) # heure fin chauffe heure nuit
+	http_post(url)
+	print(url)
+	return
+
 
 TZ_OFFSET = pytz.timezone('Europe/Paris').localize(datetime.now()).strftime('%z')
 
 def addTempoEventCalendar(couleur, jours):
 
-	if 'BLAN' in couleur['couleurJourJ1']:
+	print(couleur)
+	# if 'BLAN' in couleur['couleurJourJ1']:
+	if 'WHITE' in couleur:
 		colorId='8'
-	if 'ROUGE' in couleur['couleurJourJ1']:
+		couleur = 'TEMPO_BLANC'
+	# if 'ROUGE' in couleur['couleurJourJ1']:
+	if 'RED' in couleur:
 		colorId='11'
-	if 'BLEU' in couleur['couleurJourJ1']:
+		couleur = 'TEMPO_ROUGE'
+	# if 'BLEU' in couleur['couleurJourJ1']:
+	if 'BLUE' in couleur:
 		colorId='9'
+		couleur = 'TEMPO_BLEU'
 	# sendToWhatApp('Demain jour ' + couleur['couleurJourJ1'])
 
 	startTempo=(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%dT')+'06:00:00'+TZ_OFFSET
@@ -354,7 +533,8 @@ def addTempoEventCalendar(couleur, jours):
 	# .replace(tzinfo=pytz.timezone('UTC'))
 	print(endTempo)
 	eventShutter = {
-		'summary': couleur['couleurJourJ1'],
+		# 'summary': couleur['couleurJourJ1'],
+		'summary': str(couleur),
 		'location': 'Cesson-Sevigne, France',
 		'start': {
 			'dateTime': startTempo,
@@ -364,7 +544,8 @@ def addTempoEventCalendar(couleur, jours):
 			'dateTime':  endTempo, # startOpenShutter+1H
 	#                        'timeZone': 'Europe/Paris'
 		},
-		'description': 'ROUGE:'+str(jours['PARAM_NB_J_ROUGE'])+'\nBLANC:'+str(jours['PARAM_NB_J_BLANC'])+'\nBLEU:'+str(jours['PARAM_NB_J_BLEU']),
+		# 'description': 'ROUGE:'+str(jours['PARAM_NB_J_ROUGE'])+'\nBLANC:'+str(jours['PARAM_NB_J_BLANC'])+'\nBLEU:'+str(jours['PARAM_NB_J_BLEU']),
+		'description': 'TEMPO:'+str(couleur),
  # Red background. Use Calendar.Colors.get() for the full list.
 		'colorId': colorId,
 	'reminders': {
@@ -400,7 +581,8 @@ def GetJourTempo():
 		return result
 
 def GetCouleurTempo(date):
-	url='https://particulier.edf.fr/services/rest/referentiel/searchTempoStore?dateRelevant=' + date
+	# url='https://particulier.edf.fr/services/rest/referentiel/searchTempoStore?dateRelevant=' + date
+	url = 'https://www.services-rte.com/cms/open_data/v1/tempo?season=2024-2025'
 	try:
 		# print( url)
 		url_response = urllib.request.urlopen(url, timeout=5)
@@ -413,14 +595,15 @@ def GetCouleurTempo(date):
 		strtempo=html.decode('ascii')
 
 		result = json.loads(strtempo)
-		# print( result['couleurJourJ'] )
+		# print( date )
+		# print( result['values'][date] )
 
 # {'couleurJourJ': 'TEMPO_BLANC', 'couleurJourJ1': 'TEMPO_BLANC'}
-		return result
+		return result['values'][date], date
 	
 def Event_TempoControl():
-	JourTempo = GetJourTempo()
-	CouleurTempo = GetCouleurTempo( datetime.now().strftime('%Y-%m-%d') )
+	# obsolete JourTempo = GetJourTempo()
+	CouleurTempo, JourTempo = GetCouleurTempo( datetime.now().strftime('%Y-%m-%d') )
 	
 	addTempoEventCalendar( CouleurTempo , JourTempo)
 
@@ -443,15 +626,16 @@ def Event_Calendar(ressource):
 	events_found = get_events(ressource, timeMin, timeMax)
 	PACStateToSet=0
 	ChargeEV=0
+	HP_Rouge_Chauffage_Interdit = False
+	# forecast = get_forecast()
+	# Event_DailyControlSolar(ressource, forecast)
 	for event in events_found:
 		print( "!!!MATCH!!!   Title query=%s"%event['summary'])
 		print( "Debut : ",event['start'])
 		print( "Fin : ",event['end'])
 
-		HP_Rouge_Chauffage_Interdit = False
-		if( 'TEMPO_' in event['summary']):
-			if('ROUGE' in event['summary']) or ('BLANC' in event['summary']):
-				HP_Rouge_Chauffage_Interdit = True
+		if('TEMPO_ROUGE' in event['summary']) or ('TEMPO_BLANC' in event['summary']):
+			HP_Rouge_Chauffage_Interdit = True
 			
 		if( event['summary']=='DailyTempo'):
 			update_profil_CamRue()
@@ -464,22 +648,33 @@ def Event_Calendar(ressource):
 			forecast = get_forecast()
 			Event_DailyControlShutter(ressource, forecast['daily'] )
 			Event_DailyControlPAC(ressource, forecast)
+			Event_DailyControlSolar(ressource, forecast)
 			delete_event(ressource, param_eventId=event['id'])
 			#update_profil_CamRue()
 
+		if( event['summary']=='SolarForecast'):
+			# What the weather like ?
+			forecast = get_forecast()
+			Event_DailyControlSolar(ressource, forecast)
+			delete_event(ressource, param_eventId=event['id'])
+
 # Accessing the response like a dict object with an 'items' key
 # returns a list of item objects (events).
+		if( event['summary']=='SmartEVSEmodeOff'):
+			ChargeEV=0 # Off
+		if( event['summary']=='SmartEVSEmodeNormal'):
+			ChargeEV=1 # Normal
+		if( event['summary']=='SmartEVSEmodeSolar'):
+			ChargeEV=2 # Solar
 		if( event['summary']=='SmartEVSEmodeSmart'):
 			ChargeEV=3 # Smart
-		if( event['summary']=='SmartEVSEmodeNormal'):
-			ChargeEV=1 # Smart
 
 		if( event['summary']=='WakePAC'):
 			PACStateToSet=1
 			# Event_WakePAC(event, ressource)
 
 		if( event['summary']=='OpenShutter'):
-			Event_OpenShutter()
+			# during holidays Event_OpenShutter()
 			delete_event(ressource, param_eventId=event['id'])
 
 		if( event['summary']=='CloseShutter'):
@@ -489,7 +684,7 @@ def Event_Calendar(ressource):
 	session = TuyaRelay()
 	session.setRelay(HP_Rouge_Chauffage_Interdit)
 	SetPACState(PACStateToSet)
-	SetSmartEVSE(ChargeEV)
+	# LBR SetSmartEVSE(ChargeEV)
 
 def callable_func():
 	#os.system("clear") #this is more for my benefit and is in no way necesarry

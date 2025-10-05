@@ -5,7 +5,7 @@
 [Service]
   Type=oneshot
   RemainAfterExit=yes
-  ExecStartPre=/sbin/ip link set can0 type can bitrate 500000
+  ExecStartPre=/sbin/ip link set can0 type can bitrate 500000 restart-ms 100
   ExecStart=/sbin/ip link set can0 up
   ExecStop=/sbin/ip link set can0 down
 [Install]

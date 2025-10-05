@@ -15,8 +15,7 @@ def print_ipinfo(returncode, params):
     print ('IP: %s, Mask: %s' % (params['ip'], params['mask']))
 
 def SetPACState():
-# From web browser : https://192.168.0.14/domocan/www/php/CmdPAC.php?state=0
-	url='http://192.168.1.15:88/cgi-bin/CGIProxy.fcgi?usr=admin&pwd=jill2006&cmd=getIPInfo'
+	url='http://192.168.1.122:88/cgi-bin/CGIProxy.fcgi?usr=admin&pwd=jill2006&cmd=getIPInfo'
 	url_response = urllib.request.urlopen(url,timeout=10)
 	html = url_response.read()
 	print(html)
@@ -25,7 +24,7 @@ def SetPACState():
 
 		
 def config_motionscheduler():
-	mycam = FoscamCamera('192.168.1.15', 88, 'admin', 'jill2006', daemon=False)
+	mycam = FoscamCamera('192.168.1.122', 88, 'admin', 'jill2006', daemon=False)
 	mycam.get_ip_info( print_ipinfo )
 	
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
 	import urllib.parse
 	import urllib.request
 
-	url = 'http://192.168.1.15:88/cgi-bin/CGIProxy.fcgi'
+	url = 'http://192.168.1.122:88/cgi-bin/CGIProxy.fcgi'
 	values = {'usr' : 'admin',
 			  'pwd' : 'jill2006',
 			  'cmd' : 'getIPInfo' }
